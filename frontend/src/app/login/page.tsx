@@ -1,7 +1,7 @@
 "use client";
 
-import AuthForm from "@/components/AuthForm";
-import { useLoginMutation } from "@/store/apiSlice";
+import LoginForm from "@/features/auth/components/LoginForm";
+import { useLoginMutation } from "@/features/auth/slices/authApiSlice";
 import LayoutWrapper from "@/components/LayoutWrapper";
 
 export default function LoginPage() {
@@ -9,7 +9,7 @@ export default function LoginPage() {
 
   return (
     <LayoutWrapper>
-      <AuthForm type="login" onSubmit={login} />
+      <LoginForm onSubmit={login} />
     </LayoutWrapper>
   );
 }

@@ -5,12 +5,12 @@ export interface User {
   role: "admin" | "editor";
 }
 
-export interface LoginResponse {
-  token: string;
-  user: User;
-}
+export type LoginFormValues = Pick<User, "email"> & {
+  password: string;
+};
 
-export interface RegisterResponse {
-  message: string;
-  userId?: string;
-}
+export type RegisterFormValues = Omit<User, "id"> & {
+  password: string;
+};
+
+export type AuthFormValues = LoginFormValues | RegisterFormValues;
