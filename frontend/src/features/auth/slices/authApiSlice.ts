@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { LoginResponse, RegisterResponse } from "@/types/auth";
+import { LoginResponse, RegisterResponse, ApiErrorResponse } from "@/types/auth";
 import { RootState } from "@/store/store";
 
 export const authApiSlice = createApi({
@@ -30,16 +30,26 @@ export const authApiSlice = createApi({
         method: "POST",
         body,
       }),
+      transformErrorResponse: (response: ApiErrorResponse) => {
+        return {
+          data: response.data,
+          status: response.status,
+        };
+      },
     }),
-    login: builder.mutation<LoginResponse, { email: string; password: string }>(
-      {
-        query: (body) => ({
-          url: "/auth/login",
-          method: "POST",
-          body,
-        }),
-      }
-    ),
+    login: builder.mutation<LoginResponse, { email: string; password: string }>({
+      query: (body) => ({
+        url: "/auth/login",
+        method: "POST",
+        body,
+      }),
+      transformErrorResponse: (response: ApiErrorResponse) => {
+        return {
+          data: response.data,
+          status: response.status,
+        };
+      },
+    }),
   }),
 });
 

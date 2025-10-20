@@ -1,15 +1,7 @@
 "use client";
 
-import RegisterForm from "@/features/auth/components/RegisterForm";
-import { useRegisterMutation } from "@/features/auth/slices/authApiSlice";
-import LayoutWrapper from "@/components/LayoutWrapper";
+import { RegistrationForm } from "@/features/auth/components/RegistrationForm";
 
 export default function RegisterPage() {
-  const [register] = useRegisterMutation();
-
-  return (
-    <LayoutWrapper>
-      <RegisterForm onSubmit={register} />
-    </LayoutWrapper>
-  );
+  return <RegistrationForm />;
 }

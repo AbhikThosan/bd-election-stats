@@ -2,26 +2,103 @@
 @import "antd/dist/reset.css";
 
 :root {
+  /* Election Theme Colors */
+  --election-primary: #1e40af;      /* Deep Blue - Trust & Stability */
+  --election-secondary: #dc2626;   /* Red - Democracy & Power */
+  --election-accent: #f59e0b;      /* Amber - Hope & Progress */
+  --election-success: #059669;     /* Green - Success & Growth */
+  --election-warning: #d97706;     /* Orange - Caution */
+  --election-error: #dc2626;       /* Red - Error */
+  
+  /* Neutral Colors */
+  --election-gray-50: #f9fafb;
+  --election-gray-100: #f3f4f6;
+  --election-gray-200: #e5e7eb;
+  --election-gray-300: #d1d5db;
+  --election-gray-400: #9ca3af;
+  --election-gray-500: #6b7280;
+  --election-gray-600: #4b5563;
+  --election-gray-700: #374151;
+  --election-gray-800: #1f2937;
+  --election-gray-900: #111827;
+  
+  /* Background & Text */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111827;
+  --card-background: #ffffff;
+  --border-color: #e5e7eb;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--election-primary);
+  --color-secondary: var(--election-secondary);
+  --color-accent: var(--election-accent);
+  --color-success: var(--election-success);
+  --color-warning: var(--election-warning);
+  --color-error: var(--election-error);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0f172a;
+    --foreground: #f1f5f9;
+    --card-background: #1e293b;
+    --border-color: #334155;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+}
+
+/* Custom Ant Design Theme Overrides */
+.ant-btn-primary {
+  background: var(--election-primary);
+  border-color: var(--election-primary);
+}
+
+.ant-btn-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.ant-input:focus,
+.ant-input-focused {
+  border-color: var(--election-primary);
+  box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.2);
+}
+
+.ant-select:not(.ant-select-disabled):hover .ant-select-selector {
+  border-color: var(--election-primary);
+}
+
+.ant-select-focused .ant-select-selector {
+  border-color: var(--election-primary);
+  box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.2);
+}
+
+/* Election-themed utility classes */
+.election-gradient {
+  background: linear-gradient(135deg, var(--election-primary) 0%, var(--election-secondary) 100%);
+}
+
+.election-card {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.election-text-gradient {
+  background: linear-gradient(135deg, var(--election-primary) 0%, var(--election-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
