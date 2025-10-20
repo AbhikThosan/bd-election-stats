@@ -22,3 +22,19 @@ export type LoginFormValues = Pick<User, "email"> & {
 export type RegisterFormValues = Omit<User, "id"> & {
   password: string;
 };
+
+// API Error Response Types
+export interface ApiErrorResponse {
+  status: number;
+  data: {
+    message: string;
+    error?: string;
+    details?: Record<string, unknown>;
+  };
+}
+
+export interface AuthError {
+  message: string;
+  status?: number;
+  details?: Record<string, unknown>;
+}
