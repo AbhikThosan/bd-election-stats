@@ -51,10 +51,6 @@ userSchema.pre("save", function (next) {
   next();
 });
 
-// Ensure unique index on email and username
-userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ username: 1 }, { unique: true });
-
 // TTL index for pending users: auto-delete after 48 hours
 userSchema.index(
   { createdAt: 1 },

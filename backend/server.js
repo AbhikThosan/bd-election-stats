@@ -11,6 +11,10 @@ const http = require("http");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const notificationRoutes = require("./routes/notifications");
+const electionRoutes = require("./routes/elections");
+const constituencyResultRoutes = require("./routes/constituencyResults");
+const publicRoutes = require("./routes/public");
+const bulkUploadRoutes = require("./routes/bulkUpload");
 const logger = require("./utils/logger");
 
 dotenv.config();
@@ -35,14 +39,20 @@ app.use("/api/auth", authRoutes);
 app.use("/api/auth/users", userRoutes);
 app.use("/api/auth/notifications", notificationRoutes);
 
+// Election data management routes
+app.use("/api/elections", electionRoutes);
+app.use("/api/constituency-results", constituencyResultRoutes);
+app.use("/api/constituency-results", bulkUploadRoutes);
+app.use("/api/public", publicRoutes);
+
 const swaggerOptions = {
   definition: {
     openapi: "3.0.3",
     info: {
-      title: "BD Election Stats Authentication API",
+      title: "BD Election Stats API",
       version: "1.0.0",
       description:
-        "API for user authentication, role management, and notifications",
+        "API for Bangladesh election data management, user authentication, role management, and notifications",
     },
     servers: [{ url: `http://localhost:${process.env.PORT}` }],
   },
@@ -54,9 +64,11 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 app.use((err, req, res, next) => {
   logger.error(err.stack);
-  res
-    .status(err.status || 500)
-    .json({ message: err.message || "Internal Server Error" });
+  const response = { message: err.message || "Internal Server Error" };
+  if (err.errors && err.errors.length > 0) {
+    response.errors = err.errors;
+  }
+  res.status(err.status || 500).json(response);
 });
 
 io.on("connection", (socket) => {
