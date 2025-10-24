@@ -5,7 +5,6 @@ import { ElectionButton } from '@/components/ui/ElectionButton';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { useLoginForm } from '@/hooks/forms/useLoginForm';
 import { useLogin } from '@/hooks/auth/useLogin';
-import { LoginFormValues } from '@/types/auth';
 
 const { Text, Link } = Typography;
 
