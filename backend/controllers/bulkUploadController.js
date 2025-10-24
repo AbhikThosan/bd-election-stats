@@ -5,6 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 const ConstituencyResult = require("../models/ConstituencyResult");
+const Center = require("../models/Center");
 const BulkUpload = require("../models/BulkUpload");
 const CustomError = require("../utils/errors");
 const logger = require("../utils/logger");
@@ -59,6 +60,7 @@ exports.uploadBulkData = async (req, res, next) => {
 
     const {
       election_year,
+      data_type = "constituency", // "constituency" or "center"
       overwrite_existing = false,
       validate_only = false,
     } = req.body;
@@ -66,6 +68,13 @@ exports.uploadBulkData = async (req, res, next) => {
     // Manual validation
     if (!election_year) {
       throw new CustomError("Election year is required", 400);
+    }
+
+    if (!["constituency", "center"].includes(data_type)) {
+      throw new CustomError(
+        "Data type must be 'constituency' or 'center'",
+        400
+      );
     }
 
     const electionYearInt = parseInt(election_year);
@@ -84,6 +93,7 @@ exports.uploadBulkData = async (req, res, next) => {
       upload_id: uploadId,
       user_id: req.user.id,
       election_year: electionYearInt,
+      data_type: data_type,
       file_name: req.file.originalname,
       file_size: req.file.size,
       total_rows: 0, // Will be updated after parsing
@@ -103,6 +113,7 @@ exports.uploadBulkData = async (req, res, next) => {
     res.status(202).json({
       message: "File uploaded successfully",
       upload_id: uploadId,
+      data_type: data_type,
       status: "processing",
       estimated_time: "2-5 minutes",
     });
@@ -190,39 +201,85 @@ exports.getUploadErrors = async (req, res, next) => {
 
 exports.downloadTemplate = async (req, res, next) => {
   try {
-    const { format } = req.params;
+    const { format, data_type = "constituency" } = req.params;
 
     if (!["excel", "csv"].includes(format)) {
       throw new CustomError("Invalid format. Use 'excel' or 'csv'", 400);
     }
 
-    // Create template data
-    const templateData = [
-      {
-        election: 7,
-        election_year: 1996,
-        constituency_number: 201,
-        constituency_name: "example-constituency",
-        total_voters: 100000,
-        total_centers: 50,
-        reported_centers: 50,
-        suspended_centers: 0,
-        total_valid_votes: 75000,
-        cancelled_votes: 1000,
-        total_turnout: 76000,
-        percent_turnout: 76.0,
-        candidate_1_name: "Example Candidate 1",
-        candidate_1_party: "Example Party 1",
-        candidate_1_symbol: "Example Symbol 1",
-        candidate_1_vote: 45000,
-        candidate_1_percent: 60.0,
-        candidate_2_name: "Example Candidate 2",
-        candidate_2_party: "Example Party 2",
-        candidate_2_symbol: "Example Symbol 2",
-        candidate_2_vote: 30000,
-        candidate_2_percent: 40.0,
-      },
-    ];
+    if (!["constituency", "center"].includes(data_type)) {
+      throw new CustomError(
+        "Invalid data type. Use 'constituency' or 'center'",
+        400
+      );
+    }
+
+    let templateData;
+    let filename;
+
+    if (data_type === "center") {
+      // Center template data
+      templateData = [
+        {
+          election: 11,
+          election_year: 2018,
+          constituency_id: 203,
+          constituency_name: "নরসিংদী-৫",
+          center_no: 1,
+          center: "বিয়াম ল্যাবরেটরী স্কুল, সাং- শ্রীরামপুর দক্ষিণ পাড়া",
+          gender: "both",
+          lat: 23.97638031087031,
+          lon: 90.65395661289762,
+          map_link: "http://google.com/maps/place/BIAM+Laboratory+School",
+          total_voters: 1459,
+          votes_candidate1: 3,
+          votes_candidate2: 0,
+          votes_candidate3: 162,
+          votes_candidate4: 0,
+          votes_candidate5: 0,
+          votes_candidate6: 1,
+          votes_candidate7: 1,
+          votes_candidate8: 1,
+          votes_candidate9: 458,
+          total_valid_votes: 626,
+          total_invalid_votes: 11,
+          total_votes_cast: 637,
+          turnout_percentage: 43.66,
+        },
+      ];
+      filename = `centers_template.${format === "excel" ? "xlsx" : "csv"}`;
+    } else {
+      // Constituency template data
+      templateData = [
+        {
+          election: 7,
+          election_year: 1996,
+          constituency_number: 201,
+          constituency_name: "example-constituency",
+          total_voters: 100000,
+          total_centers: 50,
+          reported_centers: 50,
+          suspended_centers: 0,
+          total_valid_votes: 75000,
+          cancelled_votes: 1000,
+          total_turnout: 76000,
+          percent_turnout: 76.0,
+          candidate_1_name: "Example Candidate 1",
+          candidate_1_party: "Example Party 1",
+          candidate_1_symbol: "Example Symbol 1",
+          candidate_1_vote: 45000,
+          candidate_1_percent: 60.0,
+          candidate_2_name: "Example Candidate 2",
+          candidate_2_party: "Example Party 2",
+          candidate_2_symbol: "Example Symbol 2",
+          candidate_2_vote: 30000,
+          candidate_2_percent: 40.0,
+        },
+      ];
+      filename = `constituency_results_template.${
+        format === "excel" ? "xlsx" : "csv"
+      }`;
+    }
 
     if (format === "excel") {
       const worksheet = XLSX.utils.json_to_sheet(templateData);
@@ -235,19 +292,13 @@ exports.downloadTemplate = async (req, res, next) => {
         "Content-Type",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       );
-      res.setHeader(
-        "Content-Disposition",
-        "attachment; filename=constituency_results_template.xlsx"
-      );
+      res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
       res.send(buffer);
     } else {
       // CSV format
       const csvContent = convertToCSV(templateData);
       res.setHeader("Content-Type", "text/csv");
-      res.setHeader(
-        "Content-Disposition",
-        "attachment; filename=constituency_results_template.csv"
-      );
+      res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
       res.send(csvContent);
     }
   } catch (error) {
@@ -291,51 +342,91 @@ async function processBulkUpload(bulkUpload, filePath) {
         const row = batch[j];
 
         try {
-          // Validate row data
-          const validationErrors = validateRowData(row, rowIndex + 1);
+          // Validate row data based on data type
+          const validationErrors =
+            bulkUpload.data_type === "center"
+              ? validateCenterRowData(row, rowIndex + 1)
+              : validateRowData(row, rowIndex + 1);
+
           if (validationErrors.length > 0) {
             errors.push({
               row_number: rowIndex + 1,
-              constituency_number: row.constituency_number,
+              constituency_number:
+                row.constituency_number || row.constituency_id,
               constituency_name: row.constituency_name,
+              center_no: row.center_no,
+              center: row.center,
               errors: validationErrors,
             });
             bulkUpload.progress.failed++;
             continue;
           }
 
-          // Check for duplicates
-          const existing = await ConstituencyResult.findOne({
-            election_year: bulkUpload.election_year,
-            constituency_number: row.constituency_number,
-          });
+          if (bulkUpload.data_type === "center") {
+            // Process center data
+            const existing = await Center.findOne({
+              election_year: bulkUpload.election_year,
+              constituency_id: row.constituency_id,
+              center_no: row.center_no,
+            });
 
-          if (existing) {
-            if (bulkUpload.options.overwrite_existing) {
-              // Update existing record
-              await ConstituencyResult.findByIdAndUpdate(
-                existing._id,
-                transformRowData(row)
-              );
-              updated++;
-              bulkUpload.progress.updated++;
+            if (existing) {
+              if (bulkUpload.options.overwrite_existing) {
+                // Update existing record
+                await Center.findByIdAndUpdate(
+                  existing._id,
+                  transformCenterRowData(row)
+                );
+                updated++;
+                bulkUpload.progress.updated++;
+              } else {
+                // Skip duplicate
+                duplicates++;
+                bulkUpload.progress.duplicates++;
+              }
             } else {
-              // Skip duplicate
-              duplicates++;
-              bulkUpload.progress.duplicates++;
+              // Create new record
+              const newCenter = new Center(transformCenterRowData(row));
+              await newCenter.save();
+              successful++;
+              bulkUpload.progress.successful++;
             }
           } else {
-            // Create new record
-            const newResult = new ConstituencyResult(transformRowData(row));
-            await newResult.save();
-            successful++;
-            bulkUpload.progress.successful++;
+            // Process constituency data
+            const existing = await ConstituencyResult.findOne({
+              election_year: bulkUpload.election_year,
+              constituency_number: row.constituency_number,
+            });
+
+            if (existing) {
+              if (bulkUpload.options.overwrite_existing) {
+                // Update existing record
+                await ConstituencyResult.findByIdAndUpdate(
+                  existing._id,
+                  transformRowData(row)
+                );
+                updated++;
+                bulkUpload.progress.updated++;
+              } else {
+                // Skip duplicate
+                duplicates++;
+                bulkUpload.progress.duplicates++;
+              }
+            } else {
+              // Create new record
+              const newResult = new ConstituencyResult(transformRowData(row));
+              await newResult.save();
+              successful++;
+              bulkUpload.progress.successful++;
+            }
           }
         } catch (error) {
           errors.push({
             row_number: rowIndex + 1,
-            constituency_number: row.constituency_number,
+            constituency_number: row.constituency_number || row.constituency_id,
             constituency_name: row.constituency_name,
+            center_no: row.center_no,
+            center: row.center,
             errors: [{ field: "general", message: error.message }],
           });
           bulkUpload.progress.failed++;
@@ -515,4 +606,163 @@ function convertToCSV(data) {
   }
 
   return csvRows.join("\n");
+}
+
+// Center-specific validation function
+function validateCenterRowData(row, rowNumber) {
+  const errors = [];
+
+  // Required fields for centers
+  const requiredFields = [
+    "election",
+    "election_year",
+    "constituency_id",
+    "constituency_name",
+    "center_no",
+    "center",
+    "gender",
+    "total_voters",
+    "total_valid_votes",
+    "total_invalid_votes",
+    "total_votes_cast",
+    "turnout_percentage",
+  ];
+
+  requiredFields.forEach((field) => {
+    if (!row[field] || row[field] === "") {
+      errors.push({ field, message: `${field} is required` });
+    }
+  });
+
+  // Numeric validations
+  if (row.total_voters && (isNaN(row.total_voters) || row.total_voters <= 0)) {
+    errors.push({
+      field: "total_voters",
+      message: "Total voters must be a positive number",
+    });
+  }
+
+  if (
+    row.total_valid_votes &&
+    (isNaN(row.total_valid_votes) || row.total_valid_votes < 0)
+  ) {
+    errors.push({
+      field: "total_valid_votes",
+      message: "Total valid votes must be a non-negative number",
+    });
+  }
+
+  if (
+    row.total_invalid_votes &&
+    (isNaN(row.total_invalid_votes) || row.total_invalid_votes < 0)
+  ) {
+    errors.push({
+      field: "total_invalid_votes",
+      message: "Total invalid votes must be a non-negative number",
+    });
+  }
+
+  if (
+    row.total_votes_cast &&
+    (isNaN(row.total_votes_cast) || row.total_votes_cast < 0)
+  ) {
+    errors.push({
+      field: "total_votes_cast",
+      message: "Total votes cast must be a non-negative number",
+    });
+  }
+
+  if (
+    row.turnout_percentage &&
+    (isNaN(row.turnout_percentage) ||
+      row.turnout_percentage < 0 ||
+      row.turnout_percentage > 100)
+  ) {
+    errors.push({
+      field: "turnout_percentage",
+      message: "Turnout percentage must be between 0 and 100",
+    });
+  }
+
+  // Gender validation
+  if (row.gender && !["male", "female", "both"].includes(row.gender)) {
+    errors.push({
+      field: "gender",
+      message: "Gender must be male, female, or both",
+    });
+  }
+
+  // Coordinate validation
+  if (row.lat && (isNaN(row.lat) || row.lat < -90 || row.lat > 90)) {
+    errors.push({
+      field: "lat",
+      message: "Latitude must be between -90 and 90",
+    });
+  }
+
+  if (row.lon && (isNaN(row.lon) || row.lon < -180 || row.lon > 180)) {
+    errors.push({
+      field: "lon",
+      message: "Longitude must be between -180 and 180",
+    });
+  }
+
+  // Participant validation - check at least one participant exists
+  let hasParticipant = false;
+  for (let i = 1; i <= 10; i++) {
+    if (row[`participant_${i}_name`]) {
+      hasParticipant = true;
+      break;
+    }
+  }
+
+  if (!hasParticipant) {
+    errors.push({
+      field: "participant_info",
+      message: "At least one participant is required",
+    });
+  }
+
+  return errors;
+}
+
+// Center-specific transformation function
+function transformCenterRowData(row) {
+  const participantInfo = [];
+
+  // Support up to 10 participants
+  for (let i = 1; i <= 10; i++) {
+    const nameField = `participant_${i}_name`;
+    const symbolField = `participant_${i}_symbol`;
+    const voteField = `participant_${i}_vote`;
+
+    if (row[nameField] && row[nameField].trim()) {
+      participantInfo.push({
+        name: row[nameField].trim(),
+        symbol: row[symbolField]?.trim() || "",
+        vote: parseInt(row[voteField]) || 0,
+      });
+    }
+  }
+
+  return {
+    election: parseInt(row.election),
+    election_year: parseInt(row.election_year),
+    constituency_id: parseInt(row.constituency_id),
+    constituency_name: row.constituency_name.trim(),
+    center_no: parseInt(row.center_no),
+    center: row.center.trim(),
+    gender: row.gender,
+    co_ordinate: {
+      lat: parseFloat(row.lat) || 0,
+      lon: parseFloat(row.lon) || 0,
+    },
+    map_link: row.map_link?.trim() || "",
+    total_voters: parseInt(row.total_voters),
+    participant_info: participantInfo,
+    total_valid_votes: parseInt(row.total_valid_votes),
+    total_invalid_votes: parseInt(row.total_invalid_votes),
+    total_votes_cast: parseInt(row.total_votes_cast),
+    turnout_percentage: parseFloat(row.turnout_percentage),
+  };
 }

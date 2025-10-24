@@ -15,10 +15,10 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/constituency-results/template/{format}/{data_type}:
+ * /api/centers/template/{format}:
  *   get:
- *     summary: Download template file for bulk upload
- *     tags: [Bulk Upload]
+ *     summary: Download center template file for bulk upload
+ *     tags: [Centers Bulk Upload]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -28,15 +28,9 @@ const router = express.Router();
  *         schema:
  *           type: string
  *           enum: [excel, csv]
- *       - in: path
- *         name: data_type
- *         required: true
- *         schema:
- *           type: string
- *           enum: [constituency, center]
  *     responses:
  *       '200':
- *         description: Template file downloaded
+ *         description: Center template file downloaded
  *         content:
  *           application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
  *             schema:
@@ -46,30 +40,31 @@ const router = express.Router();
  *             schema:
  *               type: string
  *       '400':
- *         description: Invalid format or data type
+ *         description: Invalid format
  */
 router.get(
-  "/template/:format/:data_type",
+  "/template/:format",
   auth,
   rbac(["super_admin", "admin", "editor"]),
   [
     param("format")
       .isIn(["excel", "csv"])
       .withMessage("Format must be 'excel' or 'csv'"),
-    param("data_type")
-      .isIn(["constituency", "center"])
-      .withMessage("Data type must be 'constituency' or 'center'"),
   ],
   validate,
-  downloadTemplate
+  (req, res, next) => {
+    // Force data_type to "center" for center template downloads
+    req.params.data_type = "center";
+    downloadTemplate(req, res, next);
+  }
 );
 
 /**
  * @swagger
- * /api/constituency-results/bulk-upload:
+ * /api/centers/bulk-upload:
  *   post:
- *     summary: Upload and process bulk constituency results
- *     tags: [Bulk Upload]
+ *     summary: Upload and process bulk center data
+ *     tags: [Centers Bulk Upload]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -86,12 +81,7 @@ router.get(
  *               election_year:
  *                 type: integer
  *                 description: Election year
- *                 example: 1996
- *               data_type:
- *                 type: string
- *                 enum: [constituency, center]
- *                 description: Type of data being uploaded
- *                 default: constituency
+ *                 example: 2018
  *               overwrite_existing:
  *                 type: boolean
  *                 description: Whether to overwrite existing records
@@ -113,6 +103,8 @@ router.get(
  *                   type: string
  *                 upload_id:
  *                   type: string
+ *                 data_type:
+ *                   type: string
  *                 status:
  *                   type: string
  *                 estimated_time:
@@ -127,15 +119,19 @@ router.post(
   auth,
   rbac(["super_admin", "admin", "editor"]),
   uploadMiddleware,
-  uploadBulkData
+  (req, res, next) => {
+    // Force data_type to "center" for center bulk uploads
+    req.body.data_type = "center";
+    uploadBulkData(req, res, next);
+  }
 );
 
 /**
  * @swagger
- * /api/constituency-results/bulk-upload/{id}:
+ * /api/centers/bulk-upload/{id}:
  *   get:
- *     summary: Check bulk upload status
- *     tags: [Bulk Upload]
+ *     summary: Check bulk upload status for centers
+ *     tags: [Centers Bulk Upload]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -199,10 +195,10 @@ router.get(
 
 /**
  * @swagger
- * /api/constituency-results/bulk-upload/{id}/errors:
+ * /api/centers/bulk-upload/{id}/errors:
  *   get:
- *     summary: Get validation errors for bulk upload
- *     tags: [Bulk Upload]
+ *     summary: Get validation errors for center bulk upload
+ *     tags: [Centers Bulk Upload]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -229,9 +225,13 @@ router.get(
  *                     properties:
  *                       row_number:
  *                         type: integer
- *                       constituency_number:
+ *                       constituency_id:
  *                         type: integer
  *                       constituency_name:
+ *                         type: string
+ *                       center_no:
+ *                         type: integer
+ *                       center:
  *                         type: string
  *                       errors:
  *                         type: array

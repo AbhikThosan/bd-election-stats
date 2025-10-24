@@ -4,6 +4,8 @@ const {
   getConstituenciesByElectionYear,
   getDetailedResult,
   getElectionDetails,
+  getCentersByElectionAndConstituency,
+  getCenterById,
 } = require("../controllers/publicController");
 const validate = require("../middleware/validate");
 const { param, query } = require("express-validator");
@@ -399,6 +401,266 @@ router.get(
   [param("id").isMongoId().withMessage("Invalid election ID")],
   validate,
   getElectionDetails
+);
+
+/**
+ * @swagger
+ * /api/public/centers/{electionYear}/{constituencyId}:
+ *   get:
+ *     summary: Get centers by election year and constituency (Public)
+ *     tags: [Public]
+ *     parameters:
+ *       - in: path
+ *         name: electionYear
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: constituencyId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [center_no, center, turnout_percentage, total_voters]
+ *           default: center_no
+ *       - in: query
+ *         name: order
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *       - in: query
+ *         name: gender
+ *         schema:
+ *           type: string
+ *           enum: [male, female, both]
+ *       - in: query
+ *         name: min_turnout
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: max_turnout
+ *         schema:
+ *           type: number
+ *     responses:
+ *       '200':
+ *         description: List of centers with summary data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 centers:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       center_no:
+ *                         type: integer
+ *                       center:
+ *                         type: string
+ *                       gender:
+ *                         type: string
+ *                       total_voters:
+ *                         type: integer
+ *                       total_valid_votes:
+ *                         type: integer
+ *                       total_invalid_votes:
+ *                         type: integer
+ *                       total_votes_cast:
+ *                         type: integer
+ *                       turnout_percentage:
+ *                         type: number
+ *                       votes_candidate1:
+ *                         type: integer
+ *                       votes_candidate2:
+ *                         type: integer
+ *                       votes_candidate3:
+ *                         type: integer
+ *                       votes_candidate4:
+ *                         type: integer
+ *                       votes_candidate5:
+ *                         type: integer
+ *                       votes_candidate6:
+ *                         type: integer
+ *                       votes_candidate7:
+ *                         type: integer
+ *                       votes_candidate8:
+ *                         type: integer
+ *                       votes_candidate9:
+ *                         type: integer
+ *                       co_ordinate:
+ *                         type: object
+ *                         properties:
+ *                           lat:
+ *                             type: number
+ *                           lon:
+ *                             type: number
+ *                       map_link:
+ *                         type: string
+ *                 election_year:
+ *                   type: integer
+ *                 constituency_id:
+ *                   type: integer
+ *                 constituency_name:
+ *                   type: string
+ *                 total:
+ *                   type: integer
+ *                 page:
+ *                   type: integer
+ *                 limit:
+ *                   type: integer
+ *       '404':
+ *         description: Election or constituency not found
+ */
+router.get(
+  "/centers/:electionYear/:constituencyId",
+  [
+    param("electionYear")
+      .isInt({ min: 1970, max: 2030 })
+      .withMessage("Invalid election year"),
+    param("constituencyId")
+      .isInt({ min: 1 })
+      .withMessage("Invalid constituency ID"),
+    query("page").optional().isInt({ min: 1 }).toInt(),
+    query("limit").optional().isInt({ min: 1, max: 100 }).toInt(),
+    query("search").optional().isString().trim(),
+    query("sort")
+      .optional()
+      .isIn(["center_no", "center", "turnout_percentage", "total_voters"]),
+    query("order").optional().isIn(["asc", "desc"]),
+    query("gender").optional().isIn(["male", "female", "both"]),
+    query("min_turnout").optional().isFloat({ min: 0, max: 100 }).toFloat(),
+    query("max_turnout").optional().isFloat({ min: 0, max: 100 }).toFloat(),
+  ],
+  validate,
+  getCentersByElectionAndConstituency
+);
+
+/**
+ * @swagger
+ * /api/public/centers/{electionYear}/{constituencyId}/{centerId}:
+ *   get:
+ *     summary: Get detailed center information (Public)
+ *     tags: [Public]
+ *     parameters:
+ *       - in: path
+ *         name: electionYear
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: constituencyId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: centerId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       '200':
+ *         description: Detailed center information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                 election:
+ *                   type: integer
+ *                 election_year:
+ *                   type: integer
+ *                 constituency_id:
+ *                   type: integer
+ *                 constituency_name:
+ *                   type: string
+ *                 center_no:
+ *                   type: integer
+ *                 center:
+ *                   type: string
+ *                 gender:
+ *                   type: string
+ *                 co_ordinate:
+ *                   type: object
+ *                   properties:
+ *                     lat:
+ *                       type: number
+ *                     lon:
+ *                       type: number
+ *                 map_link:
+ *                   type: string
+ *                 total_voters:
+ *                   type: integer
+ *                 votes_candidate1:
+ *                   type: integer
+ *                 votes_candidate2:
+ *                   type: integer
+ *                 votes_candidate3:
+ *                   type: integer
+ *                 votes_candidate4:
+ *                   type: integer
+ *                 votes_candidate5:
+ *                   type: integer
+ *                 votes_candidate6:
+ *                   type: integer
+ *                 votes_candidate7:
+ *                   type: integer
+ *                 votes_candidate8:
+ *                   type: integer
+ *                 votes_candidate9:
+ *                   type: integer
+ *                 total_valid_votes:
+ *                   type: integer
+ *                 total_invalid_votes:
+ *                   type: integer
+ *                 total_votes_cast:
+ *                   type: integer
+ *                 turnout_percentage:
+ *                   type: number
+ *                 total_candidate_votes:
+ *                   type: integer
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *       '404':
+ *         description: Center not found
+ */
+router.get(
+  "/centers/:electionYear/:constituencyId/:centerId",
+  [
+    param("electionYear")
+      .isInt({ min: 1970, max: 2030 })
+      .withMessage("Invalid election year"),
+    param("constituencyId")
+      .isInt({ min: 1 })
+      .withMessage("Invalid constituency ID"),
+    param("centerId").isInt({ min: 1 }).withMessage("Invalid center ID"),
+  ],
+  validate,
+  getCenterById
 );
 
 module.exports = router;

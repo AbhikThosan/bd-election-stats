@@ -23,6 +23,12 @@ const rowErrorSchema = new mongoose.Schema({
   constituency_name: {
     type: String,
   },
+  center_no: {
+    type: Number,
+  },
+  center: {
+    type: String,
+  },
   errors: [errorDetailSchema],
 });
 
@@ -40,6 +46,11 @@ const bulkUploadSchema = new mongoose.Schema({
   election_year: {
     type: Number,
     required: true,
+  },
+  data_type: {
+    type: String,
+    enum: ["constituency", "center"],
+    default: "constituency",
   },
   file_name: {
     type: String,

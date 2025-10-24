@@ -1,5 +1,6 @@
 const Election = require("../models/Election");
 const ConstituencyResult = require("../models/ConstituencyResult");
+const Center = require("../models/Center");
 const CustomError = require("../utils/errors");
 
 exports.getAllElections = async (req, res, next) => {
@@ -200,6 +201,114 @@ exports.getElectionDetails = async (req, res, next) => {
     };
 
     res.json(detailedElection);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getCentersByElectionAndConstituency = async (req, res, next) => {
+  try {
+    const { electionYear, constituencyId } = req.params;
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      sort = "center_no",
+      order = "asc",
+      gender,
+      min_turnout,
+      max_turnout,
+    } = req.query;
+
+    // Validate election year exists
+    const election = await Election.findOne({
+      election_year: parseInt(electionYear),
+    });
+    if (!election) {
+      throw new CustomError("Election not found", 404);
+    }
+
+    // Validate constituency exists
+    const constituency = await ConstituencyResult.findOne({
+      election_year: parseInt(electionYear),
+      constituency_number: parseInt(constituencyId),
+    });
+    if (!constituency) {
+      throw new CustomError("Constituency not found", 404);
+    }
+
+    const query = {
+      election_year: parseInt(electionYear),
+      constituency_id: parseInt(constituencyId),
+    };
+
+    if (search) {
+      query.$or = [
+        { center: { $regex: search, $options: "i" } },
+        { center_no: parseInt(search) || null },
+      ].filter(Boolean);
+    }
+
+    if (gender) {
+      query.gender = gender;
+    }
+
+    if (min_turnout || max_turnout) {
+      query.turnout_percentage = {};
+      if (min_turnout) query.turnout_percentage.$gte = parseFloat(min_turnout);
+      if (max_turnout) query.turnout_percentage.$lte = parseFloat(max_turnout);
+    }
+
+    const sortOrder = order === "desc" ? -1 : 1;
+    const sortObj = { [sort]: sortOrder };
+
+    const centers = await Center.find(query)
+      .select(
+        `
+        center_no center gender total_voters total_valid_votes 
+        total_invalid_votes total_votes_cast turnout_percentage 
+        votes_candidate1 votes_candidate2 votes_candidate3 
+        votes_candidate4 votes_candidate5 votes_candidate6 
+        votes_candidate7 votes_candidate8 votes_candidate9
+        co_ordinate map_link
+      `
+      )
+      .sort(sortObj)
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+      .lean();
+
+    const total = await Center.countDocuments(query);
+
+    res.json({
+      centers,
+      election_year: parseInt(electionYear),
+      constituency_id: parseInt(constituencyId),
+      constituency_name: constituency.constituency_name,
+      total,
+      page: Number(page),
+      limit: Number(limit),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getCenterById = async (req, res, next) => {
+  try {
+    const { electionYear, constituencyId, centerId } = req.params;
+
+    const center = await Center.findOne({
+      election_year: parseInt(electionYear),
+      constituency_id: parseInt(constituencyId),
+      center_no: parseInt(centerId),
+    });
+
+    if (!center) {
+      throw new CustomError("Center not found", 404);
+    }
+
+    res.json(center);
   } catch (error) {
     next(error);
   }
