@@ -13,6 +13,8 @@ const userRoutes = require("./routes/users");
 const notificationRoutes = require("./routes/notifications");
 const electionRoutes = require("./routes/elections");
 const constituencyResultRoutes = require("./routes/constituencyResults");
+const centerRoutes = require("./routes/centers");
+const centersBulkUploadRoutes = require("./routes/centersBulkUpload");
 const publicRoutes = require("./routes/public");
 const bulkUploadRoutes = require("./routes/bulkUpload");
 const logger = require("./utils/logger");
@@ -43,6 +45,8 @@ app.use("/api/auth/notifications", notificationRoutes);
 app.use("/api/elections", electionRoutes);
 app.use("/api/constituency-results", constituencyResultRoutes);
 app.use("/api/constituency-results", bulkUploadRoutes);
+app.use("/api/centers", centerRoutes);
+app.use("/api/centers", centersBulkUploadRoutes);
 app.use("/api/public", publicRoutes);
 
 const swaggerOptions = {
