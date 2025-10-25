@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  Table, 
-  Button, 
-  Space, 
-  Tag, 
-  Typography, 
-  Card, 
-  Row, 
-  Col, 
+import {
+  Button,
+  Tag,
+  Typography,
+  Card,
   Statistic,
   message,
-  Popconfirm
+  Popconfirm,
+  Pagination,
+  Spin
 } from 'antd';
 import { 
   EyeOutlined, 
@@ -23,18 +21,19 @@ import {
 } from '@ant-design/icons';
 import { useGetElectionsQuery, useDeleteElectionMutation, Election } from '@/features/elections/slices/electionsApiSlice';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
+import { ElectionDrawer } from './ElectionDrawer';
 
 const { Title, Text } = Typography;
 
 export const ElectionsTable: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [drawerVisible, setDrawerVisible] = useState(false);
   const router = useRouter();
   
-  const { data, isLoading, error } = useGetElectionsQuery({ 
-    page: currentPage, 
-    limit: pageSize 
+  const { data, isLoading } = useGetElectionsQuery({
+    page: currentPage,
+    limit: pageSize
   });
   
   const [deleteElection] = useDeleteElectionMutation();
@@ -52,9 +51,17 @@ export const ElectionsTable: React.FC = () => {
     try {
       await deleteElection(id).unwrap();
       message.success('Election deleted successfully');
-    } catch (error) {
+    } catch {
       message.error('Failed to delete election');
     }
+  };
+
+  const handleCreateElection = () => {
+    setDrawerVisible(true);
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerVisible(false);
   };
 
   const getStatusColor = (status: string) => {
@@ -70,121 +77,7 @@ export const ElectionsTable: React.FC = () => {
     }
   };
 
-  const columns = [
-    {
-      title: 'Election #',
-      dataIndex: 'election',
-      key: 'election',
-      render: (election: number) => (
-        <div>
-          <Text strong className="text-gray-900">#{election}</Text>
-        </div>
-      ),
-    },
-    {
-      title: 'Year',
-      dataIndex: 'election_year',
-      key: 'election_year',
-      render: (year: number) => (
-        <div>
-          <Text strong className="text-gray-900">{year}</Text>
-        </div>
-      ),
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => (
-        <Tag color={getStatusColor(status)} className="capitalize">
-          {status}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Constituencies',
-      dataIndex: 'total_constituencies',
-      key: 'total_constituencies',
-      render: (count: number) => (
-        <div className="flex items-center space-x-1">
-          <CalendarOutlined className="text-gray-400" />
-          <Text className="text-gray-600">{count}</Text>
-        </div>
-      ),
-    },
-    {
-      title: 'Valid Votes',
-      dataIndex: 'total_valid_vote',
-      key: 'total_valid_vote',
-      render: (count: number) => (
-        <div className="flex items-center space-x-1">
-          <UserOutlined className="text-gray-400" />
-          <Text className="text-gray-600">
-            {count ? count.toLocaleString() : 'N/A'}
-          </Text>
-        </div>
-      ),
-    },
-    {
-      title: 'Total Votes',
-      dataIndex: 'total_vote_cast',
-      key: 'total_vote_cast',
-      render: (count: number) => (
-        <div className="flex items-center space-x-1">
-          <TeamOutlined className="text-gray-400" />
-          <Text className="text-gray-600">
-            {count ? count.toLocaleString() : 'N/A'}
-          </Text>
-        </div>
-      ),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (record: Election) => (
-        <Space size="small">
-          <Button
-            type="text"
-            icon={<EyeOutlined />}
-            onClick={() => handleView(record)}
-            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-            title="View"
-          />
-          <Button
-            type="text"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-            className="text-green-600 hover:text-green-700 hover:bg-green-50"
-            title="Edit"
-          />
-          <Popconfirm
-            title="Are you sure you want to delete this election?"
-            description="This action cannot be undone."
-            onConfirm={() => handleDelete(record._id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button
-              type="text"
-              icon={<DeleteOutlined />}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              title="Delete"
-            />
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
 
-  if (error) {
-    return (
-      <Card>
-        <div className="text-center py-8">
-          <Text type="danger">Failed to load elections data</Text>
-        </div>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -201,72 +94,180 @@ export const ElectionsTable: React.FC = () => {
           icon={<PlusOutlined />}
           size="large"
           className="election-gradient border-0"
+          onClick={handleCreateElection}
         >
           Create Election
         </Button>
       </div>
 
       {/* Statistics Cards */}
-      <Row gutter={16}>
-        <Col xs={24} sm={8}>
-          <Card>
-            <Statistic
-              title="Total Elections"
-              value={data?.total || 0}
-              prefix={<CalendarOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card>
-            <Statistic
-              title="Ongoing Elections"
-              value={data?.elections?.filter(e => e.status === 'ongoing').length || 0}
-              prefix={<CalendarOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card>
-            <Statistic
-              title="Completed Elections"
-              value={data?.elections?.filter(e => e.status === 'completed').length || 0}
-              prefix={<CalendarOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card className="border border-gray-200 shadow-sm">
+          <Statistic
+            title="Total Elections"
+            value={data?.total || 0}
+            prefix={<CalendarOutlined />}
+            valueStyle={{ color: '#3f8600' }}
+          />
+        </Card>
+        <Card className="border border-gray-200 shadow-sm">
+          <Statistic
+            title="Ongoing Elections"
+            value={data?.elections?.filter(e => e.status === 'ongoing').length || 0}
+            prefix={<TeamOutlined />}
+            valueStyle={{ color: '#cf1322' }}
+          />
+        </Card>
+        <Card className="border border-gray-200 shadow-sm">
+          <Statistic
+            title="Completed Elections"
+            value={data?.elections?.filter(e => e.status === 'completed').length || 0}
+            prefix={<UserOutlined />}
+            valueStyle={{ color: '#08979c' }}
+          />
+        </Card>
+      </div>
 
-      {/* Elections Table */}
-      <Card 
-        className="border border-gray-200 shadow-sm"
-        bodyStyle={{ padding: 0 }}
-      >
-        <Table
-          columns={columns}
-          dataSource={data?.elections || []}
-          loading={isLoading}
-          rowKey="_id"
-          pagination={{
-            current: currentPage,
-            pageSize: pageSize,
-            total: data?.total || 0,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => 
-              `${range[0]}-${range[1]} of ${total} elections`,
-            onChange: (page, size) => {
-              setCurrentPage(page);
-              setPageSize(size || 10);
-            },
-          }}
-          scroll={{ x: 800 }}
-          bordered
-          className="election-table"
-        />
-      </Card>
+      {/* Elections Cards */}
+      <div className="space-y-4">
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <Spin size="large" />
+          </div>
+        ) : (
+          <>
+            {data?.elections?.map((election) => (
+              <Card
+                key={election._id}
+                className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow !mt-3"
+                bodyStyle={{ padding: '16px' }}
+              >
+                {/* Header Section */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                  <div className="flex-1">
+                    <Title level={4} className="mb-2 text-gray-800">
+                      Election #{election.election} - {election.election_year}
+                    </Title>
+                    <Tag 
+                      color={getStatusColor(election.status)} 
+                      className="capitalize text-sm px-2 py-1"
+                    >
+                      {election.status}
+                    </Tag>
+                  </div>
+                </div>
+
+                {/* Statistics Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                  <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                    <TeamOutlined className="text-blue-600 text-lg flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-lg font-semibold text-gray-900">
+                        {election.total_constituencies}
+                      </div>
+                      <div className="text-sm text-gray-600">Constituencies</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                    <UserOutlined className="text-green-600 text-lg flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-lg font-semibold text-gray-900">
+                        {election.total_valid_vote?.toLocaleString() || 'N/A'}
+                      </div>
+                      <div className="text-sm text-gray-600">Valid Votes</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
+                    <CalendarOutlined className="text-orange-600 text-lg flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-lg font-semibold text-gray-900">
+                        {election.cancelled_vote?.toLocaleString() || 'N/A'}
+                      </div>
+                      <div className="text-sm text-gray-600">Cancelled</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                    <TeamOutlined className="text-purple-600 text-lg flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-lg font-semibold text-gray-900">
+                        {election.total_vote_cast?.toLocaleString() || 'N/A'}
+                      </div>
+                      <div className="text-sm text-gray-600">Total Cast</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-gray-100">
+                  <Button
+                    type="primary"
+                    icon={<EyeOutlined />}
+                    onClick={() => handleView(election)}
+                    className="flex-1 sm:flex-none sm:min-w-[120px]"
+                    size="middle"
+                  >
+                    <span className="hidden xs:inline">View Details</span>
+                    <span className="xs:hidden">View</span>
+                  </Button>
+                  <Button
+                    icon={<EditOutlined />}
+                    onClick={() => handleEdit(election)}
+                    className="flex-1 sm:flex-none sm:min-w-[100px]"
+                    size="middle"
+                  >
+                    Edit
+                  </Button>
+                  <Popconfirm
+                    title="Delete Election"
+                    description="Are you sure you want to delete this election?"
+                    onConfirm={() => handleDelete(election._id)}
+                    okText="Yes"
+                    cancelText="No"
+                  >
+                    <Button
+                      danger
+                      icon={<DeleteOutlined />}
+                      className="flex-1 sm:flex-none sm:min-w-[100px]"
+                      size="middle"
+                    >
+                      Delete
+                    </Button>
+                  </Popconfirm>
+                </div>
+              </Card>
+            ))}
+            
+            {/* Pagination */}
+            {data?.total && data.total > pageSize && (
+              <div className="flex justify-center mt-6">
+                <Pagination
+                  current={currentPage}
+                  pageSize={pageSize}
+                  total={data.total}
+                  showSizeChanger
+                  showQuickJumper
+                  showTotal={(total, range) => 
+                    `${range[0]}-${range[1]} of ${total} elections`
+                  }
+                  onChange={(page, size) => {
+                    setCurrentPage(page);
+                    setPageSize(size || 10);
+                  }}
+                />
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Election Drawer */}
+      <ElectionDrawer
+        visible={drawerVisible}
+        onClose={handleCloseDrawer}
+      />
     </div>
   );
 };

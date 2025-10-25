@@ -221,8 +221,9 @@ export default function ElectionDetailsPage() {
                       <Col xs={24} sm={8}>
                         <Statistic
                           title="Status"
-                          value={
-                            <Tag color={getStatusColor(election.status)} className="capitalize">
+                          value={election.status}
+                          suffix={
+                            <Tag color={getStatusColor(election.status)} className="capitalize ml-2">
                               {election.status}
                             </Tag>
                           }

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Layout, Typography, Button, Space, Avatar, Dropdown, Menu } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined, BellOutlined } from '@ant-design/icons';
+import { Layout, Typography, Button, Avatar } from 'antd';
+import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store/store';
 import { logout } from '@/features/auth/slices/authCredentialSlice';
@@ -23,63 +23,67 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     router.push('/login');
   };
 
-  const userMenu = (
-    <Menu>
-      <Menu.Item key="profile" icon={<UserOutlined />}>
-        Profile
-      </Menu.Item>
-      <Menu.Item key="settings" icon={<SettingOutlined />}>
-        Settings
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
-        Logout
-      </Menu.Item>
-    </Menu>
-  );
 
   return (
     <Layout className="min-h-screen bg-gray-50">
       {/* Header */}
-      <Header className="bg-white shadow-sm border-b border-gray-200 px-6 flex items-center justify-between">
+      <Header 
+        className="bg-white shadow-sm border-b border-gray-100 px-4 lg:px-6 flex items-center justify-between"
+        style={{ 
+          background: '#ffffff',
+          height: '64px',
+          lineHeight: '64px',
+          padding: '0 24px'
+        }}
+      >
         <div className="flex items-center space-x-4">
-          <Title level={3} className="mb-0 text-blue-600">
+          <Title level={4} className="mb-0 text-gray-800 font-semibold">
             BD Election Stats
           </Title>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           {/* Notifications */}
-          <Button 
+          {/* <Button 
             type="text" 
             icon={<BellOutlined />} 
-            className="text-gray-600 hover:text-blue-600"
-          />
+            className="text-gray-500 hover:text-blue-500 hover:bg-blue-50"
+            size="middle"
+          /> */}
 
-          {/* User Menu */}
-          <Dropdown overlay={userMenu} placement="bottomRight" arrow>
-            <div className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors">
-              <Avatar 
-                size="small" 
-                icon={<UserOutlined />} 
-                className="bg-blue-500"
-              />
-              <div className="hidden sm:block">
-                <Text className="text-sm font-medium text-gray-900">
-                  {user?.username}
-                </Text>
-                <br />
-                <Text className="text-xs text-gray-500 capitalize">
-                  {user?.role}
-                </Text>
-              </div>
+          {/* User Info */}
+          {/* <div className="flex items-center space-x-2">
+            <Avatar 
+              size="small" 
+              icon={<UserOutlined />} 
+              className="bg-blue-100 text-blue-600"
+            />
+            <div className="hidden sm:block">
+              <Text className="text-sm font-medium text-gray-700">
+                {user?.username}
+              </Text>
+              <br />
+              <Text className="text-xs text-gray-400 capitalize">
+                {user?.role}
+              </Text>
             </div>
-          </Dropdown>
+          </div> */}
+
+          {/* Logout Button */}
+          <Button 
+            type="text" 
+            icon={<LogoutOutlined />} 
+            onClick={handleLogout}
+            className="text-gray-500 hover:text-red-500 hover:bg-red-50"
+            size="middle"
+          >
+            <span className="hidden sm:inline">Logout</span>
+          </Button>
         </div>
       </Header>
 
       {/* Main Content */}
-      <Content className="p-6">
+      <Content className="p-4 lg:p-6">
         <div className="max-w-7xl mx-auto">
           {children}
         </div>

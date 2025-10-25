@@ -3,12 +3,31 @@
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { Toaster } from "react-hot-toast";
+import { Spin } from "antd";
 import { store, persistor } from "@/store/store";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { restoreFromStorage } from "@/features/auth/slices/authCredentialSlice";
+
+function AuthRestorer() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    // Restore auth state from localStorage when the app initializes
+    dispatch(restoreFromStorage());
+  }, [dispatch]);
+
+  return null;
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
+      <PersistGate 
+        loading={null}
+        persistor={persistor}
+      >
+        <AuthRestorer />
         {children}
         <Toaster
           position="top-center"
