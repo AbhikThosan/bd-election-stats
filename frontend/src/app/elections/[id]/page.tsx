@@ -24,7 +24,8 @@ import {
   UserOutlined,
   PieChartOutlined,
   ArrowLeftOutlined,
-  HomeOutlined
+  HomeOutlined,
+  ArrowRightOutlined
 } from '@ant-design/icons';
 import { useGetElectionByIdQuery } from '@/features/elections/slices/electionsApiSlice';
 import { ElectionCharts } from '@/features/elections/components/ElectionCharts';
@@ -105,8 +106,8 @@ export default function ElectionDetailsPage() {
         />
 
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4 space-x-4">
+        <div className="flex justify-between items-center mt-4">
+          <div className="flex items-center justify-between gap-4 space-x-4">
             <Button 
               icon={<ArrowLeftOutlined />} 
               onClick={() => router.push('/')}
@@ -115,17 +116,17 @@ export default function ElectionDetailsPage() {
               Back
             </Button>
             <div>
-              <Title level={2} className="mb-2">
+              <Title level={3} className="mb-2">
                 Election #{election.election} - {election.election_year}
               </Title>
-              <Text className="text-gray-600">
-                Detailed analysis and statistics
-              </Text>
+           
             </div>
           </div>
-          <Tag color={getStatusColor(election.status)} className="capitalize text-lg px-4 py-2">
-            {election.status}
-          </Tag>
+       <div>
+          <Button onClick={() => router.push(`/constituencies/${election.election_year}`)}>
+            Constituency <ArrowRightOutlined />
+          </Button>
+       </div>
         </div>
 
         {/* Content Tabs */}
@@ -164,7 +165,7 @@ export default function ElectionDetailsPage() {
                       <Col xs={24} sm={8}>
                         <Statistic
                           title="Status"
-                          value={election.status}
+                          value=" "
                           suffix={
                             <Tag color={getStatusColor(election.status)} className="capitalize ml-2">
                               {election.status}
