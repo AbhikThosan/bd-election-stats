@@ -8,7 +8,6 @@ import {
   Row, 
   Col, 
   Statistic, 
-  Table, 
   Tag, 
   Typography, 
   Divider,
@@ -53,62 +52,6 @@ export default function ElectionDetailsPage() {
     }
   };
 
-  const participantColumns = [
-    {
-      title: 'Party',
-      dataIndex: 'party',
-      key: 'party',
-      render: (party: string) => (
-        <Text strong className="text-gray-900">{party}</Text>
-      ),
-    },
-    {
-      title: 'Symbol',
-      dataIndex: 'symbol',
-      key: 'symbol',
-      render: (symbol: string) => (
-        <Text className="text-gray-600">{symbol}</Text>
-      ),
-    },
-    {
-      title: 'Votes Obtained',
-      dataIndex: 'vote_obtained',
-      key: 'vote_obtained',
-      render: (votes: number) => (
-        <Text className="text-gray-600">{votes?.toLocaleString() || 'N/A'}</Text>
-      ),
-    },
-    {
-      title: 'Vote %',
-      dataIndex: 'percent_vote_obtain',
-      key: 'percent_vote_obtain',
-      render: (percent: number) => (
-        <Text className="text-blue-600 font-medium">
-          {percent ? `${percent.toFixed(2)}%` : 'N/A'}
-        </Text>
-      ),
-    },
-    {
-      title: 'Seats Won',
-      dataIndex: 'seat_obtain',
-      key: 'seat_obtain',
-      render: (seats: number) => (
-        <Text className="text-green-600 font-medium">
-          {seats || 'N/A'}
-        </Text>
-      ),
-    },
-    {
-      title: 'Seat %',
-      dataIndex: 'percent_seat_obtain',
-      key: 'percent_seat_obtain',
-      render: (percent: number) => (
-        <Text className="text-green-600 font-medium">
-          {percent ? `${percent.toFixed(2)}%` : 'N/A'}
-        </Text>
-      ),
-    },
-  ];
 
   if (isLoading) {
     return (
@@ -221,8 +164,9 @@ export default function ElectionDetailsPage() {
                       <Col xs={24} sm={8}>
                         <Statistic
                           title="Status"
-                          value={
-                            <Tag color={getStatusColor(election.status)} className="capitalize">
+                          value={election.status}
+                          suffix={
+                            <Tag color={getStatusColor(election.status)} className="capitalize ml-2">
                               {election.status}
                             </Tag>
                           }
@@ -298,7 +242,63 @@ export default function ElectionDetailsPage() {
                       </Col>
                     </Row>
                   </Card>
-
+          {/* Participants */}
+     
+           {election.participant_details && election.participant_details.length > 0 && (
+                    <Card title={
+                      <div className="flex items-center space-x-2">
+                        <TeamOutlined className="text-blue-600" />
+                        <span>Participant Details</span>
+                      </div>
+                    }>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {election.participant_details.map((participant, index) => (
+                          <Card key={index} size="small" className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="space-y-3">
+                              <div className="text-center">
+                                <Text strong className="text-lg text-gray-900">{participant.party}</Text>
+                                <br />
+                                <Text className="text-sm text-gray-600">Symbol: {participant.symbol}</Text>
+                              </div>
+                              
+                              <Divider className="my-2" />
+                              
+                              <div className="grid grid-cols-2 gap-3 text-sm">
+                                <div className="text-center">
+                                  <Text className="text-gray-500">Votes</Text>
+                                  <br />
+                                  <Text strong className="text-blue-600">
+                                    {participant.vote_obtained?.toLocaleString() || 'N/A'}
+                                  </Text>
+                                </div>
+                                <div className="text-center">
+                                  <Text className="text-gray-500">Vote %</Text>
+                                  <br />
+                                  <Text strong className="text-blue-600">
+                                    {participant.percent_vote_obtain ? `${participant.percent_vote_obtain.toFixed(2)}%` : 'N/A'}
+                                  </Text>
+                                </div>
+                                <div className="text-center">
+                                  <Text className="text-gray-500">Seats</Text>
+                                  <br />
+                                  <Text strong className="text-green-600">
+                                    {participant.seat_obtain || 'N/A'}
+                                  </Text>
+                                </div>
+                                <div className="text-center">
+                                  <Text className="text-gray-500">Seat %</Text>
+                                  <br />
+                                  <Text strong className="text-green-600">
+                                    {participant.percent_seat_obtain ? `${participant.percent_seat_obtain.toFixed(2)}%` : 'N/A'}
+                                  </Text>
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </Card>
+                  )}
                   {/* Election Metadata */}
                   <Card title="Election Information">
                     <Descriptions column={2} size="small">
@@ -322,6 +322,8 @@ export default function ElectionDetailsPage() {
                       )}
                     </Descriptions>
                   </Card>
+
+              
                 </div>
               ),
             },
@@ -334,40 +336,6 @@ export default function ElectionDetailsPage() {
                 </span>
               ),
               children: <ElectionCharts election={election} />,
-            },
-            {
-              key: 'participants',
-              label: (
-                <span>
-                  <TeamOutlined />
-                  Participants
-                </span>
-              ),
-              children: election.participant_details && election.participant_details.length > 0 ? (
-                <Card title={
-                  <div className="flex items-center space-x-2">
-                    <TeamOutlined className="text-blue-600" />
-                    <span>Participant Details</span>
-                  </div>
-                }>
-                  <Table
-                    columns={participantColumns}
-                    dataSource={election.participant_details.map((participant, index) => ({
-                      ...participant,
-                      key: index,
-                    }))}
-                    pagination={false}
-                    size="small"
-                    scroll={{ x: 600 }}
-                  />
-                </Card>
-              ) : (
-                <Card>
-                  <div className="text-center py-8">
-                    <Text type="secondary">No participant details available</Text>
-                  </div>
-                </Card>
-              ),
             },
           ]}
         />
