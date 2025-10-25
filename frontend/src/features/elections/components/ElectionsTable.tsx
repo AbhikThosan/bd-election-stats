@@ -17,7 +17,8 @@ import {
   PlusOutlined,
   CalendarOutlined,
   UserOutlined,
-  TeamOutlined
+  TeamOutlined,
+  ArrowRightOutlined
 } from '@ant-design/icons';
 import { useGetElectionsQuery, useDeleteElectionMutation, Election } from '@/features/elections/slices/electionsApiSlice';
 import { useRouter } from 'next/navigation';
@@ -54,6 +55,10 @@ export const ElectionsTable: React.FC = () => {
     } catch {
       message.error('Failed to delete election');
     }
+  };
+
+  const handleConstituency = (electionYear: number) => {
+    router.push(`/constituencies/${electionYear}`);
   };
 
   const handleCreateElection = () => {
@@ -155,6 +160,9 @@ export const ElectionsTable: React.FC = () => {
                       {election.status}
                     </Tag>
                   </div>
+                    <Button onClick={() => handleConstituency(election.election_year)}>
+                      Constituency <ArrowRightOutlined />
+                    </Button>
                 </div>
 
                 {/* Statistics Grid */}
