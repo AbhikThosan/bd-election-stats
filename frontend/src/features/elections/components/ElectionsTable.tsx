@@ -98,7 +98,6 @@ export const ElectionsTable: React.FC = () => {
           type="primary" 
           icon={<PlusOutlined />}
           size="large"
-          className="election-gradient border-0"
           onClick={handleCreateElection}
         >
           Create Election
