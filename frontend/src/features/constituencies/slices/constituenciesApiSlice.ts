@@ -84,6 +84,49 @@ export interface CreateConstituencyData {
   participant_details: ConstituencyParticipant[];
 }
 
+export interface BulkUploadProgress {
+  processed: number;
+  total: number;
+  percentage: number;
+}
+
+export interface BulkUploadSummary {
+  successful_inserts: number;
+  updated_records: number;
+  skipped_duplicates: number;
+  validation_errors: number;
+}
+
+export interface BulkUploadStatus {
+  upload_id: string;
+  status: 'uploaded' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  progress: BulkUploadProgress;
+  summary?: BulkUploadSummary;
+  processing_time?: number;
+  completed_at?: string;
+}
+
+export interface UploadError {
+  row_number: number;
+  constituency_number: number;
+  constituency_name: string;
+  errors: Array<{
+    field: string;
+    value: string;
+    message: string;
+  }>;
+}
+
+export interface BulkUploadErrors {
+  upload_id: string;
+  validation_errors: UploadError[];
+  error_summary: {
+    total_errors: number;
+    duplicate_errors: number;
+    validation_errors: number;
+  };
+}
+
 export const constituenciesApiSlice = createApi({
   reducerPath: "constituenciesApi",
   baseQuery: fetchBaseQuery({
@@ -127,10 +170,24 @@ export const constituenciesApiSlice = createApi({
         { type: "Constituency", id: election_year },
       ],
     }),
+    getBulkUploadStatus: builder.query<BulkUploadStatus, string>({
+      query: (uploadId) => ({
+        url: `/constituency-results/bulk-upload/${uploadId}`,
+        method: "GET",
+      }),
+    }),
+    getBulkUploadErrors: builder.query<BulkUploadErrors, string>({
+      query: (uploadId) => ({
+        url: `/constituency-results/bulk-upload/${uploadId}/errors`,
+        method: "GET",
+      }),
+    }),
   }),
 });
 
 export const {
   useGetConstituenciesByElectionYearQuery,
   useCreateConstituencyMutation,
+  useGetBulkUploadStatusQuery,
+  useGetBulkUploadErrorsQuery,
 } = constituenciesApiSlice;

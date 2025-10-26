@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   Card, 
@@ -26,11 +26,15 @@ import {
   SearchOutlined,
   FilterOutlined,
   EyeOutlined,
-  PlusOutlined
+  PlusOutlined,
+  UploadOutlined
 } from '@ant-design/icons';
 import { useGetConstituenciesByElectionYearQuery } from '@/features/constituencies/slices/constituenciesApiSlice';
 import { useGetElectionsQuery } from '@/features/elections/slices/electionsApiSlice';
 import { ConstituencyDrawer } from '@/features/constituencies/components/ConstituencyDrawer';
+import { UploadModal } from '@/features/constituencies/components/UploadModal';
+import { BulkUploadStatusModal } from '@/features/constituencies/components/BulkUploadStatus';
+import { useUploadFile } from '@/features/constituencies/hooks/useUploadFile';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 const { Title, Text } = Typography;
@@ -53,6 +57,7 @@ export default function ConstituenciesPage() {
   });
 
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
 
   const { data, isLoading, error } = useGetConstituenciesByElectionYearQuery({
     electionYear,
@@ -62,6 +67,18 @@ export default function ConstituenciesPage() {
   // Get election data to find the correct election number
   const { data: electionsData } = useGetElectionsQuery({ page: 1, limit: 100 });
   const currentElection = electionsData?.elections?.find(election => election.election_year === electionYear);
+
+  // Upload hook
+  const {
+    uploadVisible,
+    uploadId,
+    handleUploadClick,
+    handleUploadClose,
+    handleUploadFile,
+    setUploadId,
+  } = useUploadFile({
+    electionYear,
+  });
 
   const handleSearch = (value: string) => {
     setFilters(prev => ({ ...prev, search: value, page: 1 }));
@@ -102,6 +119,19 @@ export default function ConstituenciesPage() {
   const handleCloseDrawer = () => {
     setDrawerVisible(false);
   };
+
+  const handleCloseStatusModal = () => {
+    setStatusModalVisible(false);
+    setUploadId(null);
+    window.location.reload();
+  };
+
+  // Open status modal when uploadId is set
+  useEffect(() => {
+    if (uploadId && !statusModalVisible) {
+      setStatusModalVisible(true);
+    }
+  }, [uploadId, statusModalVisible]);
 
   if (isLoading) {
     return (
@@ -181,7 +211,10 @@ export default function ConstituenciesPage() {
               </Text>
             </div>
           </div>
-          <div className="flex justify-end sm:justify-start">
+          <div className="flex justify-end sm:justify-start gap-2">
+            <Button icon={<UploadOutlined />} onClick={handleUploadClick}>
+              Upload File
+            </Button>
             <Button 
               type="primary" 
               icon={<PlusOutlined />}
@@ -421,6 +454,22 @@ export default function ConstituenciesPage() {
               </Button>
             </Space>
           </div>
+        )}
+
+        {/* Upload Modal */}
+        <UploadModal
+          visible={uploadVisible}
+          onClose={handleUploadClose}
+          onUpload={handleUploadFile}
+        />
+
+        {/* Bulk Upload Status Modal */}
+        {uploadId && (
+          <BulkUploadStatusModal
+            visible={statusModalVisible}
+            uploadId={uploadId}
+            onClose={handleCloseStatusModal}
+          />
         )}
 
         {/* Constituency Drawer */}
