@@ -13,8 +13,7 @@ import {
   Breadcrumb,
   Input,
   Select,
-  Space,
-  Divider
+  Space
 } from 'antd';
 import { 
   CalendarOutlined, 
@@ -23,68 +22,60 @@ import {
   BarChartOutlined,
   ArrowLeftOutlined,
   HomeOutlined,
-  SearchOutlined,
   FilterOutlined,
-  EyeOutlined,
   PlusOutlined,
-  UploadOutlined,
+  EyeOutlined,
   EditOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  UploadOutlined
 } from '@ant-design/icons';
-import { useGetConstituenciesByElectionYearQuery } from '@/features/constituencies/slices/constituenciesApiSlice';
-import { useGetElectionsQuery } from '@/features/elections/slices/electionsApiSlice';
-import { ConstituencyDrawer } from '@/features/constituencies/components/ConstituencyDrawer';
-import { UploadModal } from '@/features/constituencies/components/UploadModal';
-import { BulkUploadStatusModal } from '@/features/constituencies/components/BulkUploadStatus';
-import { useUploadFile } from '@/features/constituencies/hooks/useUploadFile';
+import { 
+  useGetCentersByConstituencyQuery, 
+  useGetConstituencyByNumberQuery,
+  useBulkUploadCentersMutation 
+} from '@/features/constituencies/slices/constituenciesApiSlice';
+import Swal from 'sweetalert2';
+import { CenterDrawer } from '@/features/constituencies/components/CenterDrawer';
+import { CenterUploadModal } from '@/features/constituencies/components/CenterUploadModal';
+import { CenterBulkUploadStatusModal } from '@/features/constituencies/components/CenterBulkUploadStatus';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-export default function ConstituenciesPage() {
+export default function CentersPage() {
   const params = useParams();
   const router = useRouter();
   const electionYear = parseInt(params.year as string);
+  const constituencyNumber = parseInt(params.number as string);
 
   const [filters, setFilters] = useState({
     page: 1,
     limit: 12,
-    search: '',
-    sort: 'constituency_number' as const,
+    sort: 'center_no' as const,
     order: 'asc' as const,
+    gender: undefined as 'male' | 'female' | 'both' | undefined,
     min_turnout: undefined as number | undefined,
     max_turnout: undefined as number | undefined,
-    party: '',
   });
 
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [uploadVisible, setUploadVisible] = useState(false);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [uploadId, setUploadId] = useState<string | null>(null);
 
-  const { data, isLoading, error } = useGetConstituenciesByElectionYearQuery({
+  const { data, isLoading, error, refetch } = useGetCentersByConstituencyQuery({
     electionYear,
+    constituencyNumber,
     ...filters,
   });
 
-  // Get election data to find the correct election number
-  const { data: electionsData } = useGetElectionsQuery({ page: 1, limit: 100 });
-  const currentElection = electionsData?.elections?.find(election => election.election_year === electionYear);
+  const [bulkUploadCenters] = useBulkUploadCentersMutation();
 
-  // Upload hook
-  const {
-    uploadVisible,
-    uploadId,
-    handleUploadClick,
-    handleUploadClose,
-    handleUploadFile,
-    setUploadId,
-  } = useUploadFile({
+  const { data: constituencyData } = useGetConstituencyByNumberQuery({
     electionYear,
+    constituencyNumber,
   });
-
-  const handleSearch = (value: string) => {
-    setFilters(prev => ({ ...prev, search: value, page: 1 }));
-  };
 
   const handleSortChange = (sort: string) => {
     setFilters(prev => ({ ...prev, sort: sort as typeof prev.sort, page: 1 }));
@@ -92,6 +83,10 @@ export default function ConstituenciesPage() {
 
   const handleOrderChange = (order: string) => {
     setFilters(prev => ({ ...prev, order: order as typeof prev.order, page: 1 }));
+  };
+
+  const handleGenderChange = (gender: string) => {
+    setFilters(prev => ({ ...prev, gender: gender as 'male' | 'female' | 'both' | undefined, page: 1 }));
   };
 
   const handleTurnoutFilter = (type: 'min' | 'max', value: number | undefined) => {
@@ -102,29 +97,11 @@ export default function ConstituenciesPage() {
     }));
   };
 
-  const handlePartyFilter = (party: string) => {
-    setFilters(prev => ({ ...prev, party, page: 1 }));
-  };
-
   const handlePageChange = (page: number) => {
     setFilters(prev => ({ ...prev, page }));
   };
 
-  const handleViewDetails = (constituencyNumber: number) => {
-    router.push(`/constituencies/${electionYear}/${constituencyNumber}`);
-  };
-
-  const handleEdit = (constituencyNumber: number) => {
-    // TODO: Implement edit functionality
-    console.log('Edit constituency:', constituencyNumber);
-  };
-
-  const handleDelete = (constituencyNumber: number) => {
-    // TODO: Implement delete functionality
-    console.log('Delete constituency:', constituencyNumber);
-  };
-
-  const handleCreateConstituency = () => {
+  const handleCreateCenter = () => {
     setDrawerVisible(true);
   };
 
@@ -132,10 +109,55 @@ export default function ConstituenciesPage() {
     setDrawerVisible(false);
   };
 
+  const handleViewDetails = (centerNumber: number) => {
+    router.push(`/constituencies/${electionYear}/${constituencyNumber}/centers/${centerNumber}`);
+  };
+
+  const handleEdit = (centerNumber: number) => {
+    // TODO: Implement edit functionality
+    console.log('Edit center:', centerNumber);
+  };
+
+  const handleDelete = (centerNumber: number) => {
+    // TODO: Implement delete functionality
+    console.log('Delete center:', centerNumber);
+  };
+
+  const handleUploadClick = () => {
+    setUploadVisible(true);
+  };
+
+  const handleUploadClose = () => {
+    setUploadVisible(false);
+  };
+
+  const handleUploadFile = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('election_year', electionYear.toString());
+      formData.append('data_type', 'center');
+      formData.append('overwrite_existing', 'false');
+      formData.append('validate_only', 'false');
+
+      const response = await bulkUploadCenters(formData).unwrap();
+      setUploadId(response.upload_id);
+      setUploadVisible(false);
+    } catch (error) {
+      console.error('Upload error:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Upload Failed',
+        text: 'Failed to upload file. Please check your authentication.',
+      });
+    }
+  };
+
   const handleCloseStatusModal = () => {
     setStatusModalVisible(false);
     setUploadId(null);
-    window.location.reload();
+    // Refetch centers list
+    refetch();
   };
 
   // Open status modal when uploadId is set
@@ -160,15 +182,15 @@ export default function ConstituenciesPage() {
       <DashboardLayout>
         <div className="text-center py-12">
           <Text type="danger" className="text-lg">
-            Failed to load constituencies for election year {electionYear}
+            Failed to load centers for constituency #{constituencyNumber}
           </Text>
           <br />
           <Button 
             type="primary" 
-            onClick={() => router.push('/')}
+            onClick={() => router.push(`/constituencies/${electionYear}/${constituencyNumber}`)}
             className="mt-4"
           >
-            Back to Dashboard
+            Back to Constituency
           </Button>
         </div>
       </DashboardLayout>
@@ -194,10 +216,14 @@ export default function ConstituenciesPage() {
             },
             {
               title: `Election ${electionYear}`,
-              onClick: () => router.push(`/elections/${data.constituencies[0]?._id}`),
+              onClick: () => router.push(`/constituencies/${electionYear}`),
             },
             {
-              title: 'Constituencies',
+              title: `Constituency #${constituencyNumber}`,
+              onClick: () => router.push(`/constituencies/${electionYear}/${constituencyNumber}`),
+            },
+            {
+              title: 'Centers',
             },
           ]}
         />
@@ -207,34 +233,38 @@ export default function ConstituenciesPage() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <Button 
               icon={<ArrowLeftOutlined />} 
-              onClick={() => router.push('/')}
+              onClick={() => router.push(`/constituencies/${electionYear}/${constituencyNumber}`)}
               className="flex items-center w-fit"
             >
               <span className="hidden sm:inline">Back</span>
             </Button>
             <div className="flex-1">
               <Title level={2} className="mb-2 text-lg sm:text-2xl">
-                <span className="hidden sm:inline">Constituencies - Election {electionYear}</span>
-                <span className="sm:hidden">Election {electionYear}</span>
+                <span className="hidden sm:inline">Centers - Constituency #{constituencyNumber} - Election {electionYear}</span>
+                <span className="sm:hidden">Centers</span>
               </Title>
               <Text className="text-gray-600 text-sm sm:text-base">
-                <span className="hidden sm:inline">{data.total_constituencies} constituencies • {data.total} total results</span>
-                <span className="sm:hidden">{data.total_constituencies} constituencies</span>
+                <span className="hidden sm:inline">Total Centers: {data.total_centers} • {data.total} results</span>
+                <span className="sm:hidden">{data.total_centers} centers</span>
               </Text>
             </div>
           </div>
           <div className="flex justify-end sm:justify-start gap-2">
-            <Button icon={<UploadOutlined />} onClick={handleUploadClick}>
-              Upload File
+            <Button 
+              icon={<UploadOutlined />}
+              onClick={handleUploadClick}
+              className="w-full sm:w-auto"
+            >
+              <span className="hidden sm:inline">Upload File</span>
+              <span className="sm:hidden">Upload</span>
             </Button>
             <Button 
-              type="primary" 
+              type="primary"
               icon={<PlusOutlined />}
-              onClick={handleCreateConstituency}
+              onClick={handleCreateCenter}
               className="w-full sm:w-auto"
-              size="middle"
             >
-              <span className="hidden sm:inline">Create Constituency</span>
+              <span className="hidden sm:inline">Create Center</span>
               <span className="sm:hidden">Create</span>
             </Button>
           </div>
@@ -244,8 +274,8 @@ export default function ConstituenciesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border border-gray-200 shadow-sm">
             <Statistic
-              title="Total Constituencies"
-              value={data.total_constituencies}
+              title="Total Centers"
+              value={data.total_centers}
               prefix={<TeamOutlined />}
               valueStyle={{ color: '#1890ff' }}
             />
@@ -280,19 +310,10 @@ export default function ConstituenciesPage() {
         <Card title={
           <div className="flex items-center space-x-2">
             <FilterOutlined className="text-blue-600" />
-            <span>Filters & Search</span>
+            <span>Filters</span>
           </div>
         }>
           <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12} md={6}>
-              <Input
-                placeholder="Search constituencies..."
-                prefix={<SearchOutlined />}
-                value={filters.search}
-                onChange={(e) => handleSearch(e.target.value)}
-                allowClear
-              />
-            </Col>
             <Col xs={24} sm={12} md={4}>
               <Select
                 placeholder="Sort by"
@@ -300,11 +321,10 @@ export default function ConstituenciesPage() {
                 onChange={handleSortChange}
                 className="w-full"
               >
-                <Option value="constituency_number">Number</Option>
-                <Option value="constituency_name">Name</Option>
-                <Option value="percent_turnout">Turnout %</Option>
+                <Option value="center_no">Center #</Option>
+                <Option value="center_name">Center Name</Option>
+                <Option value="turnout">Turnout</Option>
                 <Option value="total_voters">Total Voters</Option>
-                <Option value="margin_of_victory">Margin</Option>
               </Select>
             </Col>
             <Col xs={24} sm={12} md={3}>
@@ -316,6 +336,19 @@ export default function ConstituenciesPage() {
               >
                 <Option value="asc">Ascending</Option>
                 <Option value="desc">Descending</Option>
+              </Select>
+            </Col>
+            <Col xs={24} sm={12} md={4}>
+              <Select
+                placeholder="Gender"
+                value={filters.gender}
+                onChange={handleGenderChange}
+                allowClear
+                className="w-full"
+              >
+                <Option value="male">Male</Option>
+                <Option value="female">Female</Option>
+                <Option value="both">Both</Option>
               </Select>
             </Col>
             <Col xs={24} sm={12} md={4}>
@@ -340,22 +373,14 @@ export default function ConstituenciesPage() {
                 allowClear
               />
             </Col>
-            <Col xs={24} sm={12} md={3}>
-              <Input
-                placeholder="Party Filter"
-                value={filters.party}
-                onChange={(e) => handlePartyFilter(e.target.value)}
-                allowClear
-              />
-            </Col>
           </Row>
         </Card>
 
-        {/* Constituencies Grid */}
+        {/* Centers Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {data.constituencies.map((constituency) => (
+          {data.centers.map((center) => (
             <Card
-              key={constituency._id}
+              key={center._id}
               className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
               bodyStyle={{ padding: '16px' }}
             >
@@ -363,86 +388,61 @@ export default function ConstituenciesPage() {
                 {/* Header */}
                 <div className="text-center">
                   <Text strong className="text-lg text-gray-900">
-                    #{constituency.constituency_number}
+                    Center #{center.center_no}
                   </Text>
                   <br />
                   <Text className="text-sm text-gray-600">
-                    {constituency.constituency_name}
+                    {center.center} 
                   </Text>
                 </div>
 
-                <Divider className="my-2" />
+                <div className="border-t border-gray-200 my-2" />
 
                 {/* Statistics */}
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <Text className="text-gray-500">Total Voters:</Text>
-                    <Text strong>{constituency.total_voters?.toLocaleString() || 'N/A'}</Text>
+                    <Text strong>{center.total_voters?.toLocaleString() || 'N/A'}</Text>
+                  </div>
+                  <div className="flex justify-between">
+                    <Text className="text-gray-500">Votes Cast:</Text>
+                    <Text strong className="text-blue-600">
+                      {center.total_votes_cast?.toLocaleString() || 'N/A'}
+                    </Text>
                   </div>
                   <div className="flex justify-between">
                     <Text className="text-gray-500">Turnout:</Text>
-                    <Text strong className="text-blue-600">
-                      {constituency.percent_turnout ? `${constituency.percent_turnout.toFixed(1)}%` : 'N/A'}
+                    <Text strong className="text-green-600">
+                      {center?.turnout_percentage ? `${center.turnout_percentage.toFixed(1)}%` : 'N/A'}
                     </Text>
                   </div>
                   <div className="flex justify-between">
-                    <Text className="text-gray-500">Centers:</Text>
-                    <Text strong>{constituency.total_centers || 'N/A'}</Text>
+                    <Text className="text-gray-500">Valid Votes:</Text>
+                    <Text strong className="text-blue-600">
+                      {center.total_valid_votes?.toLocaleString() || 'N/A'}
+                    </Text>
                   </div>
                   <div className="flex justify-between">
-                    <Text className="text-gray-500">Candidates:</Text>
-                    <Text strong>{constituency.total_candidates || 'N/A'}</Text>
+                    <Text className="text-gray-500">Invalid Votes:</Text>
+                    <Text strong className="text-red-600">
+                      {center.total_invalid_votes?.toLocaleString() || 'N/A'}
+                    </Text>
                   </div>
                 </div>
 
-                {/* Winner */}
-                {constituency.winner && (
-                  <div className="mt-3 p-2 bg-green-50 rounded">
-                    <Text className="text-xs text-gray-500">Winner</Text>
-                    <br />
-                    <Text strong className="text-green-700">
-                      {constituency.winner.candidate}
-                    </Text>
-                    <br />
-                    <Text className="text-xs text-gray-600">
-                      {constituency.winner.party} ({constituency.winner.symbol})
-                    </Text>
-                    <br />
-                    <Text className="text-xs text-green-600">
-                      {constituency.winner.vote?.toLocaleString()} votes ({constituency.winner.percent?.toFixed(1)}%)
-                    </Text>
-                  </div>
-                )}
-
-                {/* Margin */}
-                {constituency.margin_of_victory && (
-                  <div className="text-center">
-                    <Text className="text-xs text-gray-500">Margin</Text>
-                    <br />
-                    <Text strong className="text-orange-600">
-                      {constituency.margin_of_victory.toLocaleString()} votes
-                    </Text>
-                    {constituency.margin_percentage && (
-                      <Text className="text-xs text-gray-500 ml-1">
-                        ({constituency.margin_percentage.toFixed(1)}%)
-                      </Text>
-                    )}
-                  </div>
-                )}
-
                 {/* Action Buttons */}
-                <div className="grid grid-cols-3 gap-2 mt-3">
+                <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-gray-200">
                   <Button
                     type="primary"
                     icon={<EyeOutlined />}
-                    onClick={() => handleViewDetails(constituency.constituency_number)}
+                    onClick={() => handleViewDetails(center.center_no)}
                     size="small"
                     title="View Details"
                   />
                   <Button
                     type="default"
                     icon={<EditOutlined />}
-                    onClick={() => handleEdit(constituency.constituency_number)}
+                    onClick={() => handleEdit(center.center_no)}
                     size="small"
                     title="Edit"
                   />
@@ -450,7 +450,7 @@ export default function ConstituenciesPage() {
                     type="default"
                     danger
                     icon={<DeleteOutlined />}
-                    onClick={() => handleDelete(constituency.constituency_number)}
+                    onClick={() => handleDelete(center.center_no)}
                     size="small"
                     title="Delete"
                   />
@@ -483,8 +483,18 @@ export default function ConstituenciesPage() {
           </div>
         )}
 
+        {/* Center Drawer */}
+        <CenterDrawer
+          visible={drawerVisible}
+          onClose={handleCloseDrawer}
+          electionYear={electionYear}
+          electionNumber={constituencyData?.election || 1}
+          constituencyNumber={constituencyNumber}
+          constituencyName={constituencyData?.constituency_name || ''}
+        />
+
         {/* Upload Modal */}
-        <UploadModal
+        <CenterUploadModal
           visible={uploadVisible}
           onClose={handleUploadClose}
           onUpload={handleUploadFile}
@@ -492,21 +502,14 @@ export default function ConstituenciesPage() {
 
         {/* Bulk Upload Status Modal */}
         {uploadId && (
-          <BulkUploadStatusModal
+          <CenterBulkUploadStatusModal
             visible={statusModalVisible}
             uploadId={uploadId}
             onClose={handleCloseStatusModal}
           />
         )}
-
-        {/* Constituency Drawer */}
-        <ConstituencyDrawer
-          visible={drawerVisible}
-          onClose={handleCloseDrawer}
-          electionYear={electionYear}
-          electionNumber={currentElection?.election || data?.constituencies[0]?.election || 1}
-        />
       </div>
     </DashboardLayout>
   );
 }
+
