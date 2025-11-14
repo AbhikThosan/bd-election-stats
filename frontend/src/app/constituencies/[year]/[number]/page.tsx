@@ -1,29 +1,32 @@
 "use client";
 
-import React from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { 
-  Card, 
-  Row, 
-  Col, 
-  Statistic, 
-  Typography, 
+import React from "react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  Card,
+  Row,
+  Col,
+  Typography,
   Divider,
   Spin,
   Button,
-  Breadcrumb
-} from 'antd';
-import { 
-  CalendarOutlined, 
-  TeamOutlined, 
+  Breadcrumb,
+} from "antd";
+import {
+  TeamOutlined,
   TrophyOutlined,
   BarChartOutlined,
   ArrowLeftOutlined,
   HomeOutlined,
   ArrowRightOutlined,
-} from '@ant-design/icons';
-import { useGetConstituencyByNumberQuery } from '@/features/constituencies/slices/constituenciesApiSlice';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+} from "@ant-design/icons";
+import { useGetConstituencyByNumberQuery } from "@/features/constituencies/slices/constituenciesApiSlice";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { AiOutlineNumber } from "react-icons/ai";
+import { GiPlayerBase, GiTabletopPlayers, GiVote } from "react-icons/gi";
+import { HiReceiptPercent } from "react-icons/hi2";
+import { LiaUsersSolid, LiaVoteYeaSolid } from "react-icons/lia";
+import { MdOutlineCancelPresentation } from "react-icons/md";
 
 const { Title, Text } = Typography;
 
@@ -33,19 +36,23 @@ export default function ConstituencyDetailsPage() {
   const electionYear = parseInt(params.year as string);
   const constituencyNumber = parseInt(params.number as string);
 
-  const { data: constituency, isLoading, error } = useGetConstituencyByNumberQuery({
+  const {
+    data: constituency,
+    isLoading,
+    error,
+  } = useGetConstituencyByNumberQuery({
     electionYear,
     constituencyNumber,
   });
 
   const handleEdit = () => {
     // TODO: Implement edit functionality
-    console.log('Edit constituency:', constituencyNumber);
+    console.log("Edit constituency:", constituencyNumber);
   };
 
   const handleDelete = () => {
     // TODO: Implement delete functionality
-    console.log('Delete constituency:', constituencyNumber);
+    console.log("Delete constituency:", constituencyNumber);
   };
 
   if (isLoading) {
@@ -66,8 +73,8 @@ export default function ConstituencyDetailsPage() {
             Failed to load constituency details
           </Text>
           <br />
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             onClick={() => router.push(`/constituencies/${electionYear}`)}
             className="mt-4"
           >
@@ -91,181 +98,267 @@ export default function ConstituencyDetailsPage() {
                   <span className="ml-1">Dashboard</span>
                 </span>
               ),
-              onClick: () => router.push('/'),
+              onClick: () => router.push("/"),
             },
             {
               title: `Election ${electionYear}`,
               onClick: () => router.push(`/constituencies/${electionYear}`),
             },
             {
-              title: `Constituency #${constituencyNumber}`,
+              title: `Constituency ${constituencyNumber}`,
             },
           ]}
         />
 
+        <div className="my-4">
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => router.push(`/constituencies/${electionYear}`)}
+            className="flex items-center w-fit"
+          >
+            <span className="hidden sm:inline">Back</span>
+          </Button>
+        </div>
         {/* Header */}
+        <div>
+          <Title level={2} className="mb-2 text-lg sm:text-2xl"></Title>
+        </div>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <Button 
-              icon={<ArrowLeftOutlined />} 
-              onClick={() => router.push(`/constituencies/${electionYear}`)}
-              className="flex items-center w-fit"
-            >
-              <span className="hidden sm:inline">Back</span>
-            </Button>
             <div className="flex-1">
-              <Title level={2} className="mb-2 text-lg sm:text-2xl">
-                <span className="hidden sm:inline">Constituency #{constituencyNumber} - {constituency.constituency_name}</span>
-                <span className="sm:hidden">Constituency #{constituencyNumber}</span>
+              <Title level={4} className="mb-2 ">
+                <span>
+                  <span className="hidden md:inline">Election </span>
+                  {electionYear} -
+                </span>
+                <span>
+                  <span className="hidden md:inline">Constituency </span>
+                  {constituencyNumber} - {constituency.constituency_name}
+                </span>
               </Title>
-              <Text className="text-gray-600 text-sm sm:text-base">
-                <span className="hidden sm:inline">{constituency.constituency_name} • Election {electionYear}</span>
-                <span className="sm:hidden">{constituency.constituency_name}</span>
-              </Text>
             </div>
           </div>
-            <div className="flex justify-end sm:justify-start gap-2">
-              <Button 
-                icon={<ArrowRightOutlined />}
-                onClick={() => router.push(`/constituencies/${electionYear}/${constituencyNumber}/centers`)}
-                className="w-full sm:w-auto"
-              >
-                <span className="hidden sm:inline">Centers</span>
-                <span className="sm:hidden">Centers</span>
-              </Button>
-            </div>
+          <div className="flex justify-end sm:justify-start gap-2">
+            <Button
+              icon={<ArrowRightOutlined />}
+              onClick={() =>
+                router.push(
+                  `/constituencies/${electionYear}/${constituencyNumber}/centers`
+                )
+              }
+              className="w-full sm:w-auto"
+            >
+              <span className="hidden sm:inline">Centers</span>
+              <span className="sm:hidden">Centers</span>
+            </Button>
+          </div>
         </div>
 
         {/* Key Statistics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border border-gray-200 shadow-sm">
-            <Statistic
-              title="Constituency Number"
-              value={constituency.constituency_number}
-              prefix={<TrophyOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
+            <div>
+              <Text className="text-gray-500 text-sm mb-2 block">
+                Constituency Number
+              </Text>
+              <div className="flex items-center gap-2">
+                <AiOutlineNumber size={32} style={{ color: "#1890ff" }} />
+                <Text
+                  className="!text-3xl font-semibold"
+                  style={{ color: "#1890ff" }}
+                >
+                  {constituency.constituency_number}
+                </Text>
+              </div>
+            </div>
           </Card>
           <Card className="border border-gray-200 shadow-sm">
-            <Statistic
-              title="Total Voters"
-              value={constituency.total_voters}
-              prefix={<TeamOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
+            <div>
+              <Text className="text-gray-500 text-sm mb-2 block">
+                Total Voters
+              </Text>
+              <div className="flex items-center gap-2">
+                <LiaUsersSolid size={32} style={{ color: "#3bd0eb" }} />
+                <Text
+                  className="!text-3xl font-semibold"
+                  style={{ color: "#3bd0eb" }}
+                >
+                  {constituency.total_voters}
+                </Text>
+              </div>
+            </div>
           </Card>
           <Card className="border border-gray-200 shadow-sm">
-            <Statistic
-              title="Turnout"
-              value={constituency.percent_turnout}
-              suffix="%"
-              prefix={<BarChartOutlined />}
-              valueStyle={{ color: '#722ed1' }}
-            />
+            <div>
+              <Text className="text-gray-500 text-sm mb-2 block">Turnout</Text>
+              <div className="flex items-center gap-2">
+                <HiReceiptPercent size={32} style={{ color: "#722ed1" }} />
+                <Text
+                  className="!text-3xl font-semibold"
+                  style={{ color: "#722ed1" }}
+                >
+                  {constituency.percent_turnout}%
+                </Text>
+              </div>
+            </div>
           </Card>
           <Card className="border border-gray-200 shadow-sm">
-            <Statistic
-              title="Total Centers"
-              value={constituency.total_centers}
-              prefix={<CalendarOutlined />}
-              valueStyle={{ color: '#faad14' }}
-            />
+            <div>
+              <Text className="text-gray-500 text-sm mb-2 block">
+                Total Centers
+              </Text>
+              <div className="flex items-center gap-2">
+                <GiPlayerBase size={32} style={{ color: "#faad14" }} />
+                <Text
+                  className="!text-3xl font-semibold"
+                  style={{ color: "#faad14" }}
+                >
+                  {constituency.total_centers}
+                </Text>
+              </div>
+            </div>
           </Card>
         </div>
 
         {/* Vote Statistics */}
-        <Card title={
-          <div className="flex items-center space-x-2">
-            <BarChartOutlined className="text-blue-600" />
-            <span>Vote Statistics</span>
-          </div>
-        }>
+        <Card
+          title={
+            <div className="flex items-center space-x-2">
+              <BarChartOutlined className="text-blue-600" />
+              <span>Vote Statistics</span>
+            </div>
+          }
+        >
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12} md={6}>
-              <Statistic
-                title="Total Valid Votes"
-                value={constituency.total_valid_votes}
-                prefix={<TrophyOutlined />}
-                valueStyle={{ color: '#52c41a' }}
-              />
+              <div>
+                <Text className="text-gray-500 text-sm mb-2 block">
+                  Total Valid Votes
+                </Text>
+                <div className="flex items-center gap-2">
+                  <LiaVoteYeaSolid size={32} style={{ color: "#52c41a" }} />
+                  <Text
+                    className="!text-3xl font-semibold"
+                    style={{ color: "#52c41a" }}
+                  >
+                    {constituency.total_valid_votes}
+                  </Text>
+                </div>
+              </div>
             </Col>
             <Col xs={24} sm={12} md={6}>
-              <Statistic
-                title="Cancelled Votes"
-                value={constituency.cancelled_votes}
-                prefix={<TrophyOutlined />}
-                valueStyle={{ color: '#faad14' }}
-              />
+              <div>
+                <Text className="text-gray-500 text-sm mb-2 block">
+                  Cancelled Votes
+                </Text>
+                <div className="flex items-center gap-2">
+                  <MdOutlineCancelPresentation
+                    size={32}
+                    style={{ color: "#fa1414" }}
+                  />
+                  <Text
+                    className="!text-3xl font-semibold"
+                    style={{ color: "#fa1414" }}
+                  >
+                    {constituency.cancelled_votes}
+                  </Text>
+                </div>
+              </div>
             </Col>
             <Col xs={24} sm={12} md={6}>
-              <Statistic
-                title="Total Turnout"
-                value={constituency.total_turnout}
-                prefix={<TeamOutlined />}
-                valueStyle={{ color: '#1890ff' }}
-              />
+              <div>
+                <Text className="text-gray-500 text-sm mb-2 block">
+                  Total Turnout
+                </Text>
+                <div className="flex items-center gap-2">
+                  <GiVote size={32} style={{ color: "#1890ff" }} />
+                  <Text
+                    className="!text-3xl font-semibold"
+                    style={{ color: "#1890ff" }}
+                  >
+                    {constituency.total_turnout}
+                  </Text>
+                </div>
+              </div>
             </Col>
             <Col xs={24} sm={12} md={6}>
-              <Statistic
-                title="Suspended Centers"
-                value={constituency.suspended_centers}
-                prefix={<TeamOutlined />}
-                valueStyle={{ color: '#f5222d' }}
-              />
+              <div>
+                <Text className="text-gray-500 text-sm mb-2 block">
+                  Suspended Centers
+                </Text>
+                <div className="flex items-center gap-2">
+                  <GiPlayerBase size={32} style={{ color: "#f5222d" }} />
+                  <Text
+                    className="!text-3xl font-semibold"
+                    style={{ color: "#f5222d" }}
+                  >
+                    {constituency.suspended_centers}
+                  </Text>
+                </div>
+              </div>
             </Col>
           </Row>
         </Card>
 
         {/* Participant Details */}
-        {constituency.participant_details && constituency.participant_details.length > 0 && (
-          <Card title={
-            <div className="flex items-center space-x-2">
-              <TeamOutlined className="text-blue-600" />
-              <span>Participant Details</span>
-            </div>
-          }>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {constituency.participant_details.map((participant, index) => (
-                <Card 
-                  key={index} 
-                  size="small" 
-                  className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="space-y-3">
-                    {/* Header */}
-                    <div className="text-center">
-                      <Text strong className="text-lg text-gray-900">{participant.candidate}</Text>
-                      <br />
-                      <Text className="text-sm text-gray-600">{participant.party}</Text>
-                      <br />
-                      <Text className="text-xs text-gray-500">Symbol: {participant.symbol}</Text>
-                    </div>
-
-                    <Divider className="my-2" />
-
-                    {/* Statistics */}
-                    <div className="grid grid-cols-2 gap-3">
+        {constituency.participant_details &&
+          constituency.participant_details.length > 0 && (
+            <Card
+              title={
+                <div className="flex items-center space-x-2">
+                  <GiTabletopPlayers size={36} className="text-blue-600" />
+                  <span>Participants</span>
+                </div>
+              }
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {constituency.participant_details.map((participant, index) => (
+                  <Card
+                    key={index}
+                    size="small"
+                    className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="space-y-3">
+                      {/* Header */}
                       <div className="text-center">
-                        <Text className="text-xs text-gray-500">Votes</Text>
+                        <Text strong className="text-lg text-gray-900">
+                          {participant.candidate}
+                        </Text>
                         <br />
-                        <Text strong className="text-blue-600">
-                          {participant.vote.toLocaleString()}
+                        <Text className="text-sm text-gray-600">
+                          {participant.party}
+                        </Text>
+                        <br />
+                        <Text className="text-xs text-gray-500">
+                          Symbol: {participant.symbol}
                         </Text>
                       </div>
-                      <div className="text-center">
-                        <Text className="text-xs text-gray-500">Vote %</Text>
-                        <br />
-                        <Text strong className="text-blue-600">
-                          {participant.percent.toFixed(2)}%
-                        </Text>
+
+                      <Divider className="my-2" />
+
+                      {/* Statistics */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="text-center">
+                          <Text className="text-xs text-gray-500">Votes</Text>
+                          <br />
+                          <Text strong className="text-blue-600">
+                            {participant.vote.toLocaleString()}
+                          </Text>
+                        </div>
+                        <div className="text-center">
+                          <Text className="text-xs text-gray-500">Vote %</Text>
+                          <br />
+                          <Text strong className="text-blue-600">
+                            {participant.percent.toFixed(2)}%
+                          </Text>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </Card>
-        )}
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          )}
 
         {/* Winner Information */}
         {constituency.winner && (
@@ -289,7 +382,9 @@ export default function ConstituencyDetailsPage() {
                     <br />
                     <Text strong>{constituency.winner.party}</Text>
                     <br />
-                    <Text type="secondary">Symbol: {constituency.winner.symbol}</Text>
+                    <Text type="secondary">
+                      Symbol: {constituency.winner.symbol}
+                    </Text>
                   </div>
                 </Col>
                 <Col xs={24} sm={12}>
@@ -318,21 +413,36 @@ export default function ConstituencyDetailsPage() {
                   <Divider />
                   <Row gutter={[16, 16]}>
                     <Col xs={24} sm={12}>
-                      <Statistic
-                        title="Margin of Victory"
-                        value={constituency.margin_of_victory.toLocaleString()}
-                        suffix="votes"
-                        valueStyle={{ color: '#faad14' }}
-                      />
+                      <div>
+                        <Text className="text-gray-500 text-sm mb-2 block">
+                          Margin of Victory
+                        </Text>
+                        <div className="flex items-center">
+                          <Text
+                            className="!text-3xl font-semibold"
+                            style={{ color: "#faad14" }}
+                          >
+                            {constituency.margin_of_victory.toLocaleString()}{" "}
+                            votes
+                          </Text>
+                        </div>
+                      </div>
                     </Col>
                     {constituency.margin_percentage && (
                       <Col xs={24} sm={12}>
-                        <Statistic
-                          title="Margin Percentage"
-                          value={constituency.margin_percentage}
-                          suffix="%"
-                          valueStyle={{ color: '#faad14' }}
-                        />
+                        <div>
+                          <Text className="text-gray-500 text-sm mb-2 block">
+                            Margin Percentage
+                          </Text>
+                          <div className="flex items-center">
+                            <Text
+                              className="!text-3xl font-semibold"
+                              style={{ color: "#faad14" }}
+                            >
+                              {constituency.margin_percentage}%
+                            </Text>
+                          </div>
+                        </div>
                       </Col>
                     )}
                   </Row>
@@ -345,4 +455,3 @@ export default function ConstituencyDetailsPage() {
     </DashboardLayout>
   );
 }
-

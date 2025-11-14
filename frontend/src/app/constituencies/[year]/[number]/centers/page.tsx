@@ -1,23 +1,23 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { 
-  Card, 
-  Row, 
-  Col, 
-  Statistic, 
-  Typography, 
+import React, { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  Card,
+  Row,
+  Col,
+  Statistic,
+  Typography,
   Spin,
   Button,
   Breadcrumb,
   Input,
   Select,
-  Space
-} from 'antd';
-import { 
-  CalendarOutlined, 
-  TeamOutlined, 
+  Space,
+} from "antd";
+import {
+  CalendarOutlined,
+  TeamOutlined,
   TrophyOutlined,
   BarChartOutlined,
   ArrowLeftOutlined,
@@ -27,18 +27,20 @@ import {
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
-  UploadOutlined
-} from '@ant-design/icons';
-import { 
-  useGetCentersByConstituencyQuery, 
+  UploadOutlined,
+} from "@ant-design/icons";
+import {
+  useGetCentersByConstituencyQuery,
   useGetConstituencyByNumberQuery,
-  useBulkUploadCentersMutation 
-} from '@/features/constituencies/slices/constituenciesApiSlice';
-import Swal from 'sweetalert2';
-import { CenterDrawer } from '@/features/constituencies/components/CenterDrawer';
-import { CenterUploadModal } from '@/features/constituencies/components/CenterUploadModal';
-import { CenterBulkUploadStatusModal } from '@/features/constituencies/components/CenterBulkUploadStatus';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+  useBulkUploadCentersMutation,
+} from "@/features/constituencies/slices/constituenciesApiSlice";
+import Swal from "sweetalert2";
+import { CenterDrawer } from "@/features/constituencies/components/CenterDrawer";
+import { CenterUploadModal } from "@/features/constituencies/components/CenterUploadModal";
+import { CenterBulkUploadStatusModal } from "@/features/constituencies/components/CenterBulkUploadStatus";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { GiPlayerBase } from "react-icons/gi";
+import { MdOutlineChair } from "react-icons/md";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -52,9 +54,9 @@ export default function CentersPage() {
   const [filters, setFilters] = useState({
     page: 1,
     limit: 12,
-    sort: 'center_no' as const,
-    order: 'asc' as const,
-    gender: undefined as 'male' | 'female' | 'both' | undefined,
+    sort: "center_no" as const,
+    order: "asc" as const,
+    gender: undefined as "male" | "female" | "both" | undefined,
     min_turnout: undefined as number | undefined,
     max_turnout: undefined as number | undefined,
   });
@@ -78,19 +80,34 @@ export default function CentersPage() {
   });
 
   const handleSortChange = (sort: string) => {
-    setFilters(prev => ({ ...prev, sort: sort as typeof prev.sort, page: 1 }));
+    setFilters((prev) => ({
+      ...prev,
+      sort: sort as typeof prev.sort,
+      page: 1,
+    }));
   };
 
   const handleOrderChange = (order: string) => {
-    setFilters(prev => ({ ...prev, order: order as typeof prev.order, page: 1 }));
+    setFilters((prev) => ({
+      ...prev,
+      order: order as typeof prev.order,
+      page: 1,
+    }));
   };
 
   const handleGenderChange = (gender: string) => {
-    setFilters(prev => ({ ...prev, gender: gender as 'male' | 'female' | 'both' | undefined, page: 1 }));
+    setFilters((prev) => ({
+      ...prev,
+      gender: gender as "male" | "female" | "both" | undefined,
+      page: 1,
+    }));
   };
 
-  const handleTurnoutFilter = (type: 'min' | 'max', value: number | undefined) => {
-    setFilters(prev => ({
+  const handleTurnoutFilter = (
+    type: "min" | "max",
+    value: number | undefined
+  ) => {
+    setFilters((prev) => ({
       ...prev,
       [`${type}_turnout`]: value,
       page: 1,
@@ -98,7 +115,7 @@ export default function CentersPage() {
   };
 
   const handlePageChange = (page: number) => {
-    setFilters(prev => ({ ...prev, page }));
+    setFilters((prev) => ({ ...prev, page }));
   };
 
   const handleCreateCenter = () => {
@@ -110,17 +127,19 @@ export default function CentersPage() {
   };
 
   const handleViewDetails = (centerNumber: number) => {
-    router.push(`/constituencies/${electionYear}/${constituencyNumber}/centers/${centerNumber}`);
+    router.push(
+      `/constituencies/${electionYear}/${constituencyNumber}/centers/${centerNumber}`
+    );
   };
 
   const handleEdit = (centerNumber: number) => {
     // TODO: Implement edit functionality
-    console.log('Edit center:', centerNumber);
+    console.log("Edit center:", centerNumber);
   };
 
   const handleDelete = (centerNumber: number) => {
     // TODO: Implement delete functionality
-    console.log('Delete center:', centerNumber);
+    console.log("Delete center:", centerNumber);
   };
 
   const handleUploadClick = () => {
@@ -134,21 +153,21 @@ export default function CentersPage() {
   const handleUploadFile = async (file: File) => {
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('election_year', electionYear.toString());
-      formData.append('data_type', 'center');
-      formData.append('overwrite_existing', 'false');
-      formData.append('validate_only', 'false');
+      formData.append("file", file);
+      formData.append("election_year", electionYear.toString());
+      formData.append("data_type", "center");
+      formData.append("overwrite_existing", "false");
+      formData.append("validate_only", "false");
 
       const response = await bulkUploadCenters(formData).unwrap();
       setUploadId(response.upload_id);
       setUploadVisible(false);
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error("Upload error:", error);
       Swal.fire({
-        icon: 'error',
-        title: 'Upload Failed',
-        text: 'Failed to upload file. Please check your authentication.',
+        icon: "error",
+        title: "Upload Failed",
+        text: "Failed to upload file. Please check your authentication.",
       });
     }
   };
@@ -185,9 +204,13 @@ export default function CentersPage() {
             Failed to load centers for constituency #{constituencyNumber}
           </Text>
           <br />
-          <Button 
-            type="primary" 
-            onClick={() => router.push(`/constituencies/${electionYear}/${constituencyNumber}`)}
+          <Button
+            type="primary"
+            onClick={() =>
+              router.push(
+                `/constituencies/${electionYear}/${constituencyNumber}`
+              )
+            }
             className="mt-4"
           >
             Back to Constituency
@@ -212,45 +235,54 @@ export default function CentersPage() {
                   <span className="ml-1">Dashboard</span>
                 </span>
               ),
-              onClick: () => router.push('/'),
+              onClick: () => router.push("/"),
             },
             {
               title: `Election ${electionYear}`,
               onClick: () => router.push(`/constituencies/${electionYear}`),
             },
             {
-              title: `Constituency #${constituencyNumber}`,
-              onClick: () => router.push(`/constituencies/${electionYear}/${constituencyNumber}`),
+              title: `Constituency ${constituencyNumber}`,
+              onClick: () =>
+                router.push(
+                  `/constituencies/${electionYear}/${constituencyNumber}`
+                ),
             },
             {
-              title: 'Centers',
+              title: "Centers",
             },
           ]}
         />
-
+        <div className="my-4">
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() =>
+              router.push(
+                `/constituencies/${electionYear}/${constituencyNumber}`
+              )
+            }
+            className="flex items-center w-fit"
+          >
+            <span className="hidden sm:inline">Back</span>
+          </Button>
+        </div>
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <Button 
-              icon={<ArrowLeftOutlined />} 
-              onClick={() => router.push(`/constituencies/${electionYear}/${constituencyNumber}`)}
-              className="flex items-center w-fit"
-            >
-              <span className="hidden sm:inline">Back</span>
-            </Button>
             <div className="flex-1">
-              <Title level={2} className="mb-2 text-lg sm:text-2xl">
-                <span className="hidden sm:inline">Centers - Constituency #{constituencyNumber} - Election {electionYear}</span>
-                <span className="sm:hidden">Centers</span>
+              <Title level={4} className="mb-2">
+                <span>
+                  Centers -{" "}
+                  <span className="hidden md:inline">Constituency</span>{" "}
+                  {constituencyNumber} ({constituencyData?.constituency_name}) -{" "}
+                  <span className="hidden md:inline">Election</span>{" "}
+                  {electionYear}
+                </span>
               </Title>
-              <Text className="text-gray-600 text-sm sm:text-base">
-                <span className="hidden sm:inline">Total Centers: {data.total_centers} • {data.total} results</span>
-                <span className="sm:hidden">{data.total_centers} centers</span>
-              </Text>
             </div>
           </div>
           <div className="flex justify-end sm:justify-start gap-2">
-            <Button 
+            <Button
               icon={<UploadOutlined />}
               onClick={handleUploadClick}
               className="w-full sm:w-auto"
@@ -258,7 +290,7 @@ export default function CentersPage() {
               <span className="hidden sm:inline">Upload File</span>
               <span className="sm:hidden">Upload</span>
             </Button>
-            <Button 
+            <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={handleCreateCenter}
@@ -271,48 +303,61 @@ export default function CentersPage() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card className="border border-gray-200 shadow-sm">
-            <Statistic
-              title="Total Centers"
-              value={data.total_centers}
-              prefix={<TeamOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
+            <div>
+              <Text className="text-gray-500 text-sm mb-2 block">
+                Total Centers
+              </Text>
+              <div className="flex items-center gap-2">
+                <GiPlayerBase size={32} style={{ color: "#faad14" }} />
+                <Text
+                  className="!text-3xl font-semibold"
+                  style={{ color: "#faad14" }}
+                >
+                  {data.total}
+                </Text>
+              </div>
+            </div>
           </Card>
+
           <Card className="border border-gray-200 shadow-sm">
-            <Statistic
-              title="Results Found"
-              value={data.total}
-              prefix={<BarChartOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
+            <p>{`Constituency ${constituencyNumber}`} </p>
+            <div className="flex items-center gap-2">
+              <MdOutlineChair size={32} style={{ color: "#1890ff" }} />
+              <p className="!mb-0 text-[#1890ff] !text-lg font-semibold">
+                {constituencyData?.constituency_name}{" "}
+              </p>
+            </div>
           </Card>
+
           <Card className="border border-gray-200 shadow-sm">
-            <Statistic
-              title="Current Page"
-              value={`${data.page} of ${totalPages}`}
-              prefix={<CalendarOutlined />}
-              valueStyle={{ color: '#faad14' }}
-            />
-          </Card>
-          <Card className="border border-gray-200 shadow-sm">
-            <Statistic
-              title="Election Year"
-              value={data.election_year}
-              prefix={<TrophyOutlined />}
-              valueStyle={{ color: '#722ed1' }}
-            />
+            <div>
+              <Text className="text-gray-500 text-sm mb-2 block">
+                Election Year
+              </Text>
+              <div className="flex items-center gap-2">
+                <CalendarOutlined style={{ fontSize: 32, color: "#722ed1" }} />
+                <Text
+                  className="!text-3xl font-semibold"
+                  style={{ color: "#722ed1" }}
+                >
+                  {data.election_year}
+                </Text>
+              </div>
+            </div>
           </Card>
         </div>
 
         {/* Filters */}
-        <Card title={
-          <div className="flex items-center space-x-2">
-            <FilterOutlined className="text-blue-600" />
-            <span>Filters</span>
-          </div>
-        }>
+        <Card
+          title={
+            <div className="flex items-center space-x-2">
+              <FilterOutlined className="text-blue-600" />
+              <span>Filters</span>
+            </div>
+          }
+        >
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12} md={4}>
               <Select
@@ -358,7 +403,12 @@ export default function CentersPage() {
                 min={0}
                 max={100}
                 value={filters.min_turnout}
-                onChange={(e) => handleTurnoutFilter('min', e.target.value ? parseFloat(e.target.value) : undefined)}
+                onChange={(e) =>
+                  handleTurnoutFilter(
+                    "min",
+                    e.target.value ? parseFloat(e.target.value) : undefined
+                  )
+                }
                 allowClear
               />
             </Col>
@@ -369,7 +419,12 @@ export default function CentersPage() {
                 min={0}
                 max={100}
                 value={filters.max_turnout}
-                onChange={(e) => handleTurnoutFilter('max', e.target.value ? parseFloat(e.target.value) : undefined)}
+                onChange={(e) =>
+                  handleTurnoutFilter(
+                    "max",
+                    e.target.value ? parseFloat(e.target.value) : undefined
+                  )
+                }
                 allowClear
               />
             </Col>
@@ -382,18 +437,16 @@ export default function CentersPage() {
             <Card
               key={center._id}
               className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-              bodyStyle={{ padding: '16px' }}
+              bodyStyle={{ padding: "16px" }}
             >
               <div className="space-y-3">
                 {/* Header */}
                 <div className="text-center">
                   <Text strong className="text-lg text-gray-900">
-                    Center #{center.center_no}
+                    Center - {center.center_no}
                   </Text>
                   <br />
-                  <Text className="text-sm text-gray-600">
-                    {center.center} 
-                  </Text>
+                  <Text className="text-sm text-gray-600">{center.center}</Text>
                 </div>
 
                 <div className="border-t border-gray-200 my-2" />
@@ -402,36 +455,40 @@ export default function CentersPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <Text className="text-gray-500">Total Voters:</Text>
-                    <Text strong>{center.total_voters?.toLocaleString() || 'N/A'}</Text>
+                    <Text strong>
+                      {center.total_voters?.toLocaleString() || "N/A"}
+                    </Text>
                   </div>
                   <div className="flex justify-between">
                     <Text className="text-gray-500">Votes Cast:</Text>
                     <Text strong className="text-blue-600">
-                      {center.total_votes_cast?.toLocaleString() || 'N/A'}
+                      {center.total_votes_cast?.toLocaleString() || "N/A"}
                     </Text>
                   </div>
                   <div className="flex justify-between">
                     <Text className="text-gray-500">Turnout:</Text>
                     <Text strong className="text-green-600">
-                      {center?.turnout_percentage ? `${center.turnout_percentage.toFixed(1)}%` : 'N/A'}
+                      {center?.turnout_percentage
+                        ? `${center.turnout_percentage.toFixed(1)}%`
+                        : "N/A"}
                     </Text>
                   </div>
                   <div className="flex justify-between">
                     <Text className="text-gray-500">Valid Votes:</Text>
                     <Text strong className="text-blue-600">
-                      {center.total_valid_votes?.toLocaleString() || 'N/A'}
+                      {center.total_valid_votes?.toLocaleString() || "N/A"}
                     </Text>
                   </div>
                   <div className="flex justify-between">
                     <Text className="text-gray-500">Invalid Votes:</Text>
                     <Text strong className="text-red-600">
-                      {center.total_invalid_votes?.toLocaleString() || 'N/A'}
+                      {center.total_invalid_votes?.toLocaleString() || "N/A"}
                     </Text>
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-gray-200">
+                <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-gray-200">
                   <Button
                     type="primary"
                     icon={<EyeOutlined />}
@@ -490,7 +547,7 @@ export default function CentersPage() {
           electionYear={electionYear}
           electionNumber={constituencyData?.election || 1}
           constituencyNumber={constituencyNumber}
-          constituencyName={constituencyData?.constituency_name || ''}
+          constituencyName={constituencyData?.constituency_name || ""}
         />
 
         {/* Upload Modal */}
@@ -512,4 +569,3 @@ export default function CentersPage() {
     </DashboardLayout>
   );
 }
-

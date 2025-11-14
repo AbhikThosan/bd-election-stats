@@ -1,10 +1,10 @@
-import React from 'react';
-import { Layout, Typography, Button, Avatar } from 'antd';
-import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '@/store/store';
-import { logout } from '@/features/auth/slices/authCredentialSlice';
-import { useRouter } from 'next/navigation';
+import React from "react";
+import { Layout, Typography, Button } from "antd";
+import { LogoutOutlined } from "@ant-design/icons";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/store/store";
+import { logout } from "@/features/auth/slices/authCredentialSlice";
+import { useRouter } from "next/navigation";
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -13,27 +13,28 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
+  children,
+}) => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
 
   const handleLogout = () => {
     dispatch(logout());
-    router.push('/login');
+    router.push("/login");
   };
-
 
   return (
     <Layout className="min-h-screen bg-gray-50">
       {/* Header */}
-      <Header 
+      <Header
         className="bg-white shadow-sm border-b border-gray-100 px-4 lg:px-6 flex items-center justify-between"
-        style={{ 
-          background: '#ffffff',
-          height: '64px',
-          lineHeight: '64px',
-          padding: '0 24px'
+        style={{
+          background: "#ffffff",
+          height: "64px",
+          lineHeight: "64px",
+          padding: "0 24px",
         }}
       >
         <div className="flex items-center space-x-4">
@@ -70,9 +71,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
           </div> */}
 
           {/* Logout Button */}
-          <Button 
-            type="text" 
-            icon={<LogoutOutlined />} 
+          <Button
+            type="text"
+            icon={<LogoutOutlined />}
             onClick={handleLogout}
             className="text-gray-500 hover:text-red-500 hover:bg-red-50"
             size="middle"
@@ -84,9 +85,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
       {/* Main Content */}
       <Content className="p-4 lg:p-6">
-        <div className="max-w-7xl mx-auto">
-          {children}
-        </div>
+        <div className="max-w-7xl mx-auto">{children}</div>
       </Content>
     </Layout>
   );

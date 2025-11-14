@@ -1,27 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { 
-  Card, 
-  Row, 
-  Col, 
-  Statistic, 
-  Typography, 
+import React, { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  Card,
+  Row,
+  Col,
+  Typography,
   Spin,
   Button,
   Breadcrumb,
   Input,
   Select,
   Space,
-  Divider
-} from 'antd';
-import { 
-  CalendarOutlined, 
-  TeamOutlined, 
-  TrophyOutlined,
+  Divider,
+} from "antd";
+import {
+  CalendarOutlined,
   BarChartOutlined,
   ArrowLeftOutlined,
+  ArrowRightOutlined,
   HomeOutlined,
   SearchOutlined,
   FilterOutlined,
@@ -29,15 +27,16 @@ import {
   PlusOutlined,
   UploadOutlined,
   EditOutlined,
-  DeleteOutlined
-} from '@ant-design/icons';
-import { useGetConstituenciesByElectionYearQuery } from '@/features/constituencies/slices/constituenciesApiSlice';
-import { useGetElectionsQuery } from '@/features/elections/slices/electionsApiSlice';
-import { ConstituencyDrawer } from '@/features/constituencies/components/ConstituencyDrawer';
-import { UploadModal } from '@/features/constituencies/components/UploadModal';
-import { BulkUploadStatusModal } from '@/features/constituencies/components/BulkUploadStatus';
-import { useUploadFile } from '@/features/constituencies/hooks/useUploadFile';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+  DeleteOutlined,
+} from "@ant-design/icons";
+import { useGetConstituenciesByElectionYearQuery } from "@/features/constituencies/slices/constituenciesApiSlice";
+import { useGetElectionsQuery } from "@/features/elections/slices/electionsApiSlice";
+import { ConstituencyDrawer } from "@/features/constituencies/components/ConstituencyDrawer";
+import { UploadModal } from "@/features/constituencies/components/UploadModal";
+import { BulkUploadStatusModal } from "@/features/constituencies/components/BulkUploadStatus";
+import { useUploadFile } from "@/features/constituencies/hooks/useUploadFile";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { MdOutlineChair } from "react-icons/md";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -50,12 +49,12 @@ export default function ConstituenciesPage() {
   const [filters, setFilters] = useState({
     page: 1,
     limit: 12,
-    search: '',
-    sort: 'constituency_number' as const,
-    order: 'asc' as const,
+    search: "",
+    sort: "constituency_number" as const,
+    order: "asc" as const,
     min_turnout: undefined as number | undefined,
     max_turnout: undefined as number | undefined,
-    party: '',
+    party: "",
   });
 
   const [drawerVisible, setDrawerVisible] = useState(false);
@@ -68,7 +67,9 @@ export default function ConstituenciesPage() {
 
   // Get election data to find the correct election number
   const { data: electionsData } = useGetElectionsQuery({ page: 1, limit: 100 });
-  const currentElection = electionsData?.elections?.find(election => election.election_year === electionYear);
+  const currentElection = electionsData?.elections?.find(
+    (election) => election.election_year === electionYear
+  );
 
   // Upload hook
   const {
@@ -83,19 +84,30 @@ export default function ConstituenciesPage() {
   });
 
   const handleSearch = (value: string) => {
-    setFilters(prev => ({ ...prev, search: value, page: 1 }));
+    setFilters((prev) => ({ ...prev, search: value, page: 1 }));
   };
 
   const handleSortChange = (sort: string) => {
-    setFilters(prev => ({ ...prev, sort: sort as typeof prev.sort, page: 1 }));
+    setFilters((prev) => ({
+      ...prev,
+      sort: sort as typeof prev.sort,
+      page: 1,
+    }));
   };
 
   const handleOrderChange = (order: string) => {
-    setFilters(prev => ({ ...prev, order: order as typeof prev.order, page: 1 }));
+    setFilters((prev) => ({
+      ...prev,
+      order: order as typeof prev.order,
+      page: 1,
+    }));
   };
 
-  const handleTurnoutFilter = (type: 'min' | 'max', value: number | undefined) => {
-    setFilters(prev => ({
+  const handleTurnoutFilter = (
+    type: "min" | "max",
+    value: number | undefined
+  ) => {
+    setFilters((prev) => ({
       ...prev,
       [`${type}_turnout`]: value,
       page: 1,
@@ -103,11 +115,11 @@ export default function ConstituenciesPage() {
   };
 
   const handlePartyFilter = (party: string) => {
-    setFilters(prev => ({ ...prev, party, page: 1 }));
+    setFilters((prev) => ({ ...prev, party, page: 1 }));
   };
 
   const handlePageChange = (page: number) => {
-    setFilters(prev => ({ ...prev, page }));
+    setFilters((prev) => ({ ...prev, page }));
   };
 
   const handleViewDetails = (constituencyNumber: number) => {
@@ -116,12 +128,12 @@ export default function ConstituenciesPage() {
 
   const handleEdit = (constituencyNumber: number) => {
     // TODO: Implement edit functionality
-    console.log('Edit constituency:', constituencyNumber);
+    console.log("Edit constituency:", constituencyNumber);
   };
 
   const handleDelete = (constituencyNumber: number) => {
     // TODO: Implement delete functionality
-    console.log('Delete constituency:', constituencyNumber);
+    console.log("Delete constituency:", constituencyNumber);
   };
 
   const handleCreateConstituency = () => {
@@ -163,9 +175,9 @@ export default function ConstituenciesPage() {
             Failed to load constituencies for election year {electionYear}
           </Text>
           <br />
-          <Button 
-            type="primary" 
-            onClick={() => router.push('/')}
+          <Button
+            type="primary"
+            onClick={() => router.push("/")}
             className="mt-4"
           >
             Back to Dashboard
@@ -190,45 +202,46 @@ export default function ConstituenciesPage() {
                   <span className="ml-1">Dashboard</span>
                 </span>
               ),
-              onClick: () => router.push('/'),
+              onClick: () => router.push("/"),
             },
             {
               title: `Election ${electionYear}`,
-              onClick: () => router.push(`/elections/${data.constituencies[0]?._id}`),
+              onClick: () =>
+                router.push(`/elections/${data.constituencies[0]?._id}`),
             },
             {
-              title: 'Constituencies',
+              title: "Constituencies",
             },
           ]}
         />
+        <div className="my-4">
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => router.push("/")}
+            className="flex items-center w-fit"
+          >
+            <span className="hidden sm:inline">Back</span>
+          </Button>
+        </div>
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <Button 
-              icon={<ArrowLeftOutlined />} 
-              onClick={() => router.push('/')}
-              className="flex items-center w-fit"
-            >
-              <span className="hidden sm:inline">Back</span>
-            </Button>
             <div className="flex-1">
               <Title level={2} className="mb-2 text-lg sm:text-2xl">
-                <span className="hidden sm:inline">Constituencies - Election {electionYear}</span>
+                <span className="hidden sm:inline">
+                  Constituencies - Election {electionYear}
+                </span>
                 <span className="sm:hidden">Election {electionYear}</span>
               </Title>
-              <Text className="text-gray-600 text-sm sm:text-base">
-                <span className="hidden sm:inline">{data.total_constituencies} constituencies • {data.total} total results</span>
-                <span className="sm:hidden">{data.total_constituencies} constituencies</span>
-              </Text>
             </div>
           </div>
           <div className="flex justify-end sm:justify-start gap-2">
             <Button icon={<UploadOutlined />} onClick={handleUploadClick}>
               Upload File
             </Button>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               icon={<PlusOutlined />}
               onClick={handleCreateConstituency}
               className="w-full sm:w-auto"
@@ -241,48 +254,67 @@ export default function ConstituenciesPage() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="border border-gray-200 shadow-sm">
-            <Statistic
-              title="Total Constituencies"
-              value={data.total_constituencies}
-              prefix={<TeamOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
+            <div>
+              <Text className="text-gray-500 text-sm mb-2 block">
+                Total Constituencies
+              </Text>
+              <div className="flex items-center gap-2">
+                <MdOutlineChair size={32} style={{ color: "#1890ff" }} />
+                <Text
+                  className="!text-3xl font-semibold"
+                  style={{ color: "#1890ff" }}
+                >
+                  {data.total_constituencies}
+                </Text>
+              </div>
+            </div>
           </Card>
           <Card className="border border-gray-200 shadow-sm">
-            <Statistic
-              title="Results Found"
-              value={data.total}
-              prefix={<BarChartOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
+            <div>
+              <Text className="text-gray-500 text-sm mb-2 block">
+                Results Found
+              </Text>
+              <div className="flex items-center gap-2">
+                <BarChartOutlined style={{ fontSize: 32, color: "#52c41a" }} />
+                <Text
+                  className="!text-3xl font-semibold"
+                  style={{ color: "#52c41a" }}
+                >
+                  {data.total}
+                </Text>
+              </div>
+            </div>
           </Card>
+
           <Card className="border border-gray-200 shadow-sm">
-            <Statistic
-              title="Current Page"
-              value={`${data.page} of ${totalPages}`}
-              prefix={<CalendarOutlined />}
-              valueStyle={{ color: '#faad14' }}
-            />
-          </Card>
-          <Card className="border border-gray-200 shadow-sm">
-            <Statistic
-              title="Election Year"
-              value={data.election_year}
-              prefix={<TrophyOutlined />}
-              valueStyle={{ color: '#722ed1' }}
-            />
+            <div>
+              <Text className="text-gray-500 text-sm mb-2 block">
+                Election Year
+              </Text>
+              <div className="flex items-center gap-2">
+                <CalendarOutlined style={{ fontSize: 32, color: "#722ed1" }} />
+                <Text
+                  className="!text-3xl font-semibold"
+                  style={{ color: "#722ed1" }}
+                >
+                  {data.election_year}
+                </Text>
+              </div>
+            </div>
           </Card>
         </div>
 
         {/* Filters */}
-        <Card title={
-          <div className="flex items-center space-x-2">
-            <FilterOutlined className="text-blue-600" />
-            <span>Filters & Search</span>
-          </div>
-        }>
+        <Card
+          title={
+            <div className="flex items-center space-x-2">
+              <FilterOutlined className="text-blue-600" />
+              <span>Filters & Search</span>
+            </div>
+          }
+        >
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12} md={6}>
               <Input
@@ -325,7 +357,12 @@ export default function ConstituenciesPage() {
                 min={0}
                 max={100}
                 value={filters.min_turnout}
-                onChange={(e) => handleTurnoutFilter('min', e.target.value ? parseFloat(e.target.value) : undefined)}
+                onChange={(e) =>
+                  handleTurnoutFilter(
+                    "min",
+                    e.target.value ? parseFloat(e.target.value) : undefined
+                  )
+                }
                 allowClear
               />
             </Col>
@@ -336,7 +373,12 @@ export default function ConstituenciesPage() {
                 min={0}
                 max={100}
                 value={filters.max_turnout}
-                onChange={(e) => handleTurnoutFilter('max', e.target.value ? parseFloat(e.target.value) : undefined)}
+                onChange={(e) =>
+                  handleTurnoutFilter(
+                    "max",
+                    e.target.value ? parseFloat(e.target.value) : undefined
+                  )
+                }
                 allowClear
               />
             </Col>
@@ -357,18 +399,29 @@ export default function ConstituenciesPage() {
             <Card
               key={constituency._id}
               className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-              bodyStyle={{ padding: '16px' }}
+              bodyStyle={{ padding: "16px" }}
             >
               <div className="space-y-3">
                 {/* Header */}
                 <div className="text-center">
                   <Text strong className="text-lg text-gray-900">
-                    #{constituency.constituency_number}
-                  </Text>
-                  <br />
-                  <Text className="text-sm text-gray-600">
+                    Constituency : {constituency.constituency_number} -{" "}
                     {constituency.constituency_name}
                   </Text>
+                  <div className="mt-2">
+                    <Button
+                      type="default"
+                      icon={<ArrowRightOutlined />}
+                      onClick={() =>
+                        router.push(
+                          `/constituencies/${electionYear}/${constituency.constituency_number}/centers`
+                        )
+                      }
+                      size="small"
+                    >
+                      Centers
+                    </Button>
+                  </div>
                 </div>
 
                 <Divider className="my-2" />
@@ -377,21 +430,21 @@ export default function ConstituenciesPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <Text className="text-gray-500">Total Voters:</Text>
-                    <Text strong>{constituency.total_voters?.toLocaleString() || 'N/A'}</Text>
+                    <Text strong>
+                      {constituency.total_voters?.toLocaleString() || "N/A"}
+                    </Text>
                   </div>
                   <div className="flex justify-between">
                     <Text className="text-gray-500">Turnout:</Text>
                     <Text strong className="text-blue-600">
-                      {constituency.percent_turnout ? `${constituency.percent_turnout.toFixed(1)}%` : 'N/A'}
+                      {constituency.percent_turnout
+                        ? `${constituency.percent_turnout.toFixed(1)}%`
+                        : "N/A"}
                     </Text>
                   </div>
                   <div className="flex justify-between">
                     <Text className="text-gray-500">Centers:</Text>
-                    <Text strong>{constituency.total_centers || 'N/A'}</Text>
-                  </div>
-                  <div className="flex justify-between">
-                    <Text className="text-gray-500">Candidates:</Text>
-                    <Text strong>{constituency.total_candidates || 'N/A'}</Text>
+                    <Text strong>{constituency.total_centers || "N/A"}</Text>
                   </div>
                 </div>
 
@@ -409,33 +462,36 @@ export default function ConstituenciesPage() {
                     </Text>
                     <br />
                     <Text className="text-xs text-green-600">
-                      {constituency.winner.vote?.toLocaleString()} votes ({constituency.winner.percent?.toFixed(1)}%)
+                      {constituency.winner.vote?.toLocaleString()} votes (
+                      {constituency.winner.percent?.toFixed(1)}%)
                     </Text>
-                  </div>
-                )}
 
-                {/* Margin */}
-                {constituency.margin_of_victory && (
-                  <div className="text-center">
-                    <Text className="text-xs text-gray-500">Margin</Text>
-                    <br />
-                    <Text strong className="text-orange-600">
-                      {constituency.margin_of_victory.toLocaleString()} votes
-                    </Text>
-                    {constituency.margin_percentage && (
-                      <Text className="text-xs text-gray-500 ml-1">
-                        ({constituency.margin_percentage.toFixed(1)}%)
-                      </Text>
+                    {/* Margin */}
+                    {constituency.margin_of_victory && (
+                      <div>
+                        <Text className="text-xs text-gray-500">Margin</Text>{" "}
+                        <Text strong className="text-orange-600">
+                          {constituency.margin_of_victory.toLocaleString()}{" "}
+                          votes
+                        </Text>
+                        {constituency.margin_percentage && (
+                          <Text className="text-xs text-gray-500 ml-1">
+                            ({constituency.margin_percentage.toFixed(1)}%)
+                          </Text>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
 
                 {/* Action Buttons */}
-                <div className="grid grid-cols-3 gap-2 mt-3">
+                <div className="flex justify-between items-center gap-2">
                   <Button
                     type="primary"
                     icon={<EyeOutlined />}
-                    onClick={() => handleViewDetails(constituency.constituency_number)}
+                    onClick={() =>
+                      handleViewDetails(constituency.constituency_number)
+                    }
                     size="small"
                     title="View Details"
                   />
@@ -450,7 +506,9 @@ export default function ConstituenciesPage() {
                     type="default"
                     danger
                     icon={<DeleteOutlined />}
-                    onClick={() => handleDelete(constituency.constituency_number)}
+                    onClick={() =>
+                      handleDelete(constituency.constituency_number)
+                    }
                     size="small"
                     title="Delete"
                   />
@@ -504,7 +562,9 @@ export default function ConstituenciesPage() {
           visible={drawerVisible}
           onClose={handleCloseDrawer}
           electionYear={electionYear}
-          electionNumber={currentElection?.election || data?.constituencies[0]?.election || 1}
+          electionNumber={
+            currentElection?.election || data?.constituencies[0]?.election || 1
+          }
         />
       </div>
     </DashboardLayout>
