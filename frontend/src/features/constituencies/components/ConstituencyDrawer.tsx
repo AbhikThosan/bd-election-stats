@@ -1,25 +1,33 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Drawer,
   Form,
   Input,
   InputNumber,
   Button,
-  message,
   Row,
   Col,
   Divider,
   Card,
   Typography,
+  Spin,
 } from 'antd';
 import {
   PlusOutlined,
+  EditOutlined,
   SaveOutlined,
   CloseOutlined,
   MinusCircleOutlined,
 } from '@ant-design/icons';
-import Swal from 'sweetalert2';
-import { useCreateConstituencyMutation, CreateConstituencyData, ConstituencyParticipant } from '@/features/constituencies/slices/constituenciesApiSlice';
+import toast from 'react-hot-toast';
+import {
+  useCreateConstituencyMutation,
+  useUpdateConstituencyMutation,
+  useGetConstituencyByNumberQuery,
+  CreateConstituencyData,
+  ConstituencyParticipant,
+  Constituency,
+} from '@/features/constituencies/slices/constituenciesApiSlice';
 
 const { Title, Text } = Typography;
 
@@ -28,6 +36,7 @@ interface ConstituencyDrawerProps {
   onClose: () => void;
   electionYear: number;
   electionNumber: number;
+  constituency?: Constituency | null;
 }
 
 interface ConstituencyFormData {
@@ -51,82 +60,146 @@ export const ConstituencyDrawer: React.FC<ConstituencyDrawerProps> = ({
   onClose,
   electionYear,
   electionNumber,
+  constituency,
 }) => {
   const [form] = Form.useForm();
-  const [createConstituency, { isLoading }] = useCreateConstituencyMutation();
+  const [createConstituency, { isLoading: isCreating }] =
+    useCreateConstituencyMutation();
+  const [updateConstituency, { isLoading: isUpdating }] =
+    useUpdateConstituencyMutation();
+
+  const isEditMode = !!constituency;
+  const isLoading = isCreating || isUpdating;
+
+  // Fetch full constituency data when editing
+  const { data: fullConstituencyData, isLoading: isLoadingConstituency } =
+    useGetConstituencyByNumberQuery(
+      {
+        electionYear: electionYear,
+        constituencyNumber: constituency?.constituency_number || 0,
+      },
+      {
+        skip: !isEditMode || !constituency || !visible,
+      }
+    );
+
+  // Prefill form when editing with fetched data
+  useEffect(() => {
+    if (visible && isEditMode && fullConstituencyData) {
+      form.setFieldsValue({
+        election: fullConstituencyData.election,
+        election_year: fullConstituencyData.election_year,
+        constituency_number: fullConstituencyData.constituency_number,
+        constituency_name: fullConstituencyData.constituency_name,
+        total_voters: fullConstituencyData.total_voters,
+        total_centers: fullConstituencyData.total_centers,
+        reported_centers: fullConstituencyData.reported_centers,
+        suspended_centers: fullConstituencyData.suspended_centers,
+        total_valid_votes: fullConstituencyData.total_valid_votes,
+        cancelled_votes: fullConstituencyData.cancelled_votes,
+        total_turnout: fullConstituencyData.total_turnout,
+        percent_turnout: fullConstituencyData.percent_turnout,
+        participant_details:
+          fullConstituencyData.participant_details &&
+          fullConstituencyData.participant_details.length > 0
+            ? fullConstituencyData.participant_details
+            : [
+                {
+                  candidate: 'Sample Candidate 1',
+                  party: 'Sample Party 1',
+                  symbol: 'Sample Symbol 1',
+                  vote: 0,
+                  percent: 0,
+                },
+                {
+                  candidate: 'Sample Candidate 2',
+                  party: 'Sample Party 2',
+                  symbol: 'Sample Symbol 2',
+                  vote: 0,
+                  percent: 0,
+                },
+              ],
+      });
+    } else if (visible && !constituency) {
+      // Reset form for create mode
+      form.resetFields();
+    }
+  }, [visible, isEditMode, fullConstituencyData, form]);
 
   const handleSubmit = async (values: ConstituencyFormData) => {
     try {
       // Ensure participant_details is provided with at least 2 candidates
+      // Remove _id fields from participant_details (MongoDB internal IDs)
+      const cleanedParticipantDetails = (values.participant_details || [
+        {
+          candidate: 'Sample Candidate 1',
+          party: 'Sample Party 1',
+          symbol: 'Sample Symbol 1',
+          vote: 0,
+          percent: 0,
+        },
+        {
+          candidate: 'Sample Candidate 2',
+          party: 'Sample Party 2',
+          symbol: 'Sample Symbol 2',
+          vote: 0,
+          percent: 0,
+        },
+      ]).map((participant) => {
+        const { _id, ...rest } = participant as ConstituencyParticipant & {
+          _id?: string;
+        };
+        return rest;
+      });
+
       const formData = {
         ...values,
         election: electionNumber,
         election_year: electionYear,
-        participant_details: values.participant_details || [
-          {
-            candidate: 'Sample Candidate 1',
-            party: 'Sample Party 1',
-            symbol: 'Sample Symbol 1',
-            vote: 0,
-            percent: 0,
-          },
-          {
-            candidate: 'Sample Candidate 2',
-            party: 'Sample Party 2',
-            symbol: 'Sample Symbol 2',
-            vote: 0,
-            percent: 0,
-          },
-        ],
+        participant_details: cleanedParticipantDetails,
       };
 
-      await createConstituency(formData).unwrap();
-      message.success('Constituency created successfully!');
+      if (isEditMode && fullConstituencyData) {
+        const response = await updateConstituency({
+          id: fullConstituencyData._id,
+          data: formData,
+        }).unwrap();
+        toast.success(
+          response.message || 'Constituency updated successfully!',
+          {
+            duration: 4000,
+            position: 'top-center',
+          }
+        );
+      } else {
+        await createConstituency(formData).unwrap();
+        toast.success('Constituency created successfully!', {
+          duration: 4000,
+          position: 'top-center',
+        });
+      }
+
       form.resetFields();
       onClose();
     } catch (error: unknown) {
-      console.error('Create constituency error:', error);
-      
-      // Show error in sweet alert
-      const errorMessage = (error as { data?: { message?: string }; message?: string })?.data?.message || 
-                          (error as { data?: { message?: string }; message?: string })?.message || 
-                          'Failed to create constituency. Please check your authentication.';
-      
-      // Check if it's an authentication error
-      if (errorMessage.includes('Invalid token') || errorMessage.includes('No token')) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Authentication Required',
-          text: 'Your session has expired. Please log in again to create constituencies.',
-          confirmButtonText: 'Go to Login',
-          confirmButtonColor: '#dc2626',
-          showCloseButton: true,
-          customClass: {
-            popup: 'swal-popup',
-            title: 'swal-title',
-            htmlContainer: 'swal-content',
-            confirmButton: 'swal-confirm-button'
-          }
-        }).then(() => {
-          // Redirect to login
-          window.location.href = '/login';
-        });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Constituency Creation Failed',
-          text: errorMessage,
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#dc2626',
-          showCloseButton: true,
-          customClass: {
-            popup: 'swal-popup',
-            title: 'swal-title',
-            htmlContainer: 'swal-content',
-            confirmButton: 'swal-confirm-button'
-          }
-        });
-      }
+      console.error(
+        `${isEditMode ? 'Update' : 'Create'} constituency error:`,
+        error
+      );
+
+      const apiError = error as {
+        data?: { message?: string };
+        message?: string;
+      };
+      const errorMessage =
+        apiError?.data?.message ||
+        apiError?.message ||
+        `Failed to ${isEditMode ? 'update' : 'create'} constituency. Please check your authentication.`;
+
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: 'top-center',
+      });
     }
   };
 
@@ -136,41 +209,24 @@ export const ConstituencyDrawer: React.FC<ConstituencyDrawerProps> = ({
   };
 
   return (
-    <>
-      <style jsx global>{`
-        .swal-popup {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-          border-radius: 8px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-        .swal-title {
-          font-size: 20px;
-          font-weight: 600;
-          color: #dc2626;
-        }
-        .swal-content {
-          font-size: 16px;
-          color: #374151;
-          line-height: 1.5;
-        }
-        .swal-confirm-button {
-          background-color: #dc2626 !important;
-          border-radius: 6px !important;
-          font-weight: 500 !important;
-          padding: 8px 24px !important;
-        }
-        .swal-confirm-button:hover {
-          background-color: #b91c1c !important;
-        }
-      `}</style>
-      <Drawer
-        title={
-          <div className="flex items-center space-x-2">
-            <PlusOutlined className="text-blue-600" />
-            <span className="hidden sm:inline">Create New Constituency</span>
-            <span className="sm:hidden">Create Constituency</span>
-          </div>
-        }
+    <Drawer
+      title={
+        <div className="flex items-center space-x-2">
+          {isEditMode ? (
+            <>
+              <EditOutlined className="text-blue-600" />
+              <span className="hidden sm:inline">Edit Constituency</span>
+              <span className="sm:hidden">Edit</span>
+            </>
+          ) : (
+            <>
+              <PlusOutlined className="text-blue-600" />
+              <span className="hidden sm:inline">Create New Constituency</span>
+              <span className="sm:hidden">Create Constituency</span>
+            </>
+          )}
+        </div>
+      }
         placement="right"
         open={visible}
         onClose={handleCancel}
@@ -188,17 +244,22 @@ export const ConstituencyDrawer: React.FC<ConstituencyDrawerProps> = ({
               icon={<SaveOutlined />}
               className="w-full sm:w-auto"
             >
-              Create Constituency
+              {isEditMode ? 'Update Constituency' : 'Create Constituency'}
             </Button>
           </div>
         }
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-          requiredMark={false}
-          initialValues={{
+        {isLoadingConstituency && isEditMode ? (
+          <div className="flex justify-center items-center py-12">
+            <Spin size="large" />
+          </div>
+        ) : (
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleSubmit}
+            requiredMark={false}
+            initialValues={{
             election: electionNumber,
             election_year: electionYear,
             suspended_centers: 0,
@@ -573,7 +634,7 @@ export const ConstituencyDrawer: React.FC<ConstituencyDrawerProps> = ({
             <p className="sm:hidden">Fill all required fields to create constituency.</p>
           </div>
         </Form>
+        )}
       </Drawer>
-    </>
   );
 };

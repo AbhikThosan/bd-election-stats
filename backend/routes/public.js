@@ -146,6 +146,8 @@ router.get(
  *                   items:
  *                     type: object
  *                     properties:
+ *                       _id:
+ *                         type: string
  *                       constituency_number:
  *                         type: integer
  *                       constituency_name:

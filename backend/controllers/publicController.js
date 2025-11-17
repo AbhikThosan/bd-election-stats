@@ -82,7 +82,7 @@ exports.getConstituenciesByElectionYear = async (req, res, next) => {
     const constituencies = await ConstituencyResult.find(query)
       .select(
         `
-        constituency_number constituency_name total_voters total_centers 
+        _id constituency_number constituency_name total_voters total_centers 
         reported_centers suspended_centers total_turnout percent_turnout 
         total_valid_votes cancelled_votes participant_details
       `
@@ -107,6 +107,7 @@ exports.getConstituenciesByElectionYear = async (req, res, next) => {
       ).toFixed(2);
 
       return {
+        _id: constituency._id,
         constituency_number: constituency.constituency_number,
         constituency_name: constituency.constituency_name,
         total_voters: constituency.total_voters,

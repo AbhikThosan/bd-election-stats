@@ -271,6 +271,7 @@ export const ElectionDrawer: React.FC<ElectionDrawerProps> = ({
                   placeholder="e.g., 8"
                   className="w-full"
                   min={1}
+                  disabled={isEditMode}
                 />
               </Form.Item>
             </Col>
@@ -288,6 +289,7 @@ export const ElectionDrawer: React.FC<ElectionDrawerProps> = ({
                   className="w-full"
                   min={1970}
                   max={2030}
+                  disabled={isEditMode}
                 />
               </Form.Item>
             </Col>

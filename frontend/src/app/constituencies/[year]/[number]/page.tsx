@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Card,
@@ -13,14 +13,18 @@ import {
   Breadcrumb,
 } from "antd";
 import {
-  TeamOutlined,
   TrophyOutlined,
   BarChartOutlined,
   ArrowLeftOutlined,
   HomeOutlined,
   ArrowRightOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
-import { useGetConstituencyByNumberQuery } from "@/features/constituencies/slices/constituenciesApiSlice";
+import {
+  useGetConstituencyByNumberQuery,
+  Constituency,
+} from "@/features/constituencies/slices/constituenciesApiSlice";
+import { ConstituencyDrawer } from "@/features/constituencies/components/ConstituencyDrawer";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { AiOutlineNumber } from "react-icons/ai";
 import { GiPlayerBase, GiTabletopPlayers, GiVote } from "react-icons/gi";
@@ -36,6 +40,10 @@ export default function ConstituencyDetailsPage() {
   const electionYear = parseInt(params.year as string);
   const constituencyNumber = parseInt(params.number as string);
 
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [editingConstituency, setEditingConstituency] =
+    useState<Constituency | null>(null);
+
   const {
     data: constituency,
     isLoading,
@@ -46,13 +54,15 @@ export default function ConstituencyDetailsPage() {
   });
 
   const handleEdit = () => {
-    // TODO: Implement edit functionality
-    console.log("Edit constituency:", constituencyNumber);
+    if (constituency) {
+      setEditingConstituency(constituency);
+      setDrawerVisible(true);
+    }
   };
 
-  const handleDelete = () => {
-    // TODO: Implement delete functionality
-    console.log("Delete constituency:", constituencyNumber);
+  const handleCloseDrawer = () => {
+    setDrawerVisible(false);
+    setEditingConstituency(null);
   };
 
   if (isLoading) {
@@ -140,6 +150,15 @@ export default function ConstituencyDetailsPage() {
           </div>
           <div className="flex justify-end sm:justify-start gap-2">
             <Button
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={handleEdit}
+              className="w-full sm:w-auto"
+            >
+              <span className="hidden sm:inline">Edit Constituency</span>
+              <span className="sm:hidden">Edit</span>
+            </Button>
+            <Button
               icon={<ArrowRightOutlined />}
               onClick={() =>
                 router.push(
@@ -164,7 +183,7 @@ export default function ConstituencyDetailsPage() {
               <div className="flex items-center gap-2">
                 <AiOutlineNumber size={32} style={{ color: "#1890ff" }} />
                 <Text
-                  className="!text-3xl font-semibold"
+                  className="text-3xl! font-semibold"
                   style={{ color: "#1890ff" }}
                 >
                   {constituency.constituency_number}
@@ -180,7 +199,7 @@ export default function ConstituencyDetailsPage() {
               <div className="flex items-center gap-2">
                 <LiaUsersSolid size={32} style={{ color: "#3bd0eb" }} />
                 <Text
-                  className="!text-3xl font-semibold"
+                  className="text-3xl! font-semibold"
                   style={{ color: "#3bd0eb" }}
                 >
                   {constituency.total_voters}
@@ -194,7 +213,7 @@ export default function ConstituencyDetailsPage() {
               <div className="flex items-center gap-2">
                 <HiReceiptPercent size={32} style={{ color: "#722ed1" }} />
                 <Text
-                  className="!text-3xl font-semibold"
+                  className="text-3xl! font-semibold"
                   style={{ color: "#722ed1" }}
                 >
                   {constituency.percent_turnout}%
@@ -210,7 +229,7 @@ export default function ConstituencyDetailsPage() {
               <div className="flex items-center gap-2">
                 <GiPlayerBase size={32} style={{ color: "#faad14" }} />
                 <Text
-                  className="!text-3xl font-semibold"
+                  className="text-3xl! font-semibold"
                   style={{ color: "#faad14" }}
                 >
                   {constituency.total_centers}
@@ -238,7 +257,7 @@ export default function ConstituencyDetailsPage() {
                 <div className="flex items-center gap-2">
                   <LiaVoteYeaSolid size={32} style={{ color: "#52c41a" }} />
                   <Text
-                    className="!text-3xl font-semibold"
+                    className="text-3xl! font-semibold"
                     style={{ color: "#52c41a" }}
                   >
                     {constituency.total_valid_votes}
@@ -257,7 +276,7 @@ export default function ConstituencyDetailsPage() {
                     style={{ color: "#fa1414" }}
                   />
                   <Text
-                    className="!text-3xl font-semibold"
+                    className="text-3xl! font-semibold"
                     style={{ color: "#fa1414" }}
                   >
                     {constituency.cancelled_votes}
@@ -273,7 +292,7 @@ export default function ConstituencyDetailsPage() {
                 <div className="flex items-center gap-2">
                   <GiVote size={32} style={{ color: "#1890ff" }} />
                   <Text
-                    className="!text-3xl font-semibold"
+                    className="text-3xl! font-semibold"
                     style={{ color: "#1890ff" }}
                   >
                     {constituency.total_turnout}
@@ -289,7 +308,7 @@ export default function ConstituencyDetailsPage() {
                 <div className="flex items-center gap-2">
                   <GiPlayerBase size={32} style={{ color: "#f5222d" }} />
                   <Text
-                    className="!text-3xl font-semibold"
+                    className="text-3xl! font-semibold"
                     style={{ color: "#f5222d" }}
                   >
                     {constituency.suspended_centers}
@@ -419,7 +438,7 @@ export default function ConstituencyDetailsPage() {
                         </Text>
                         <div className="flex items-center">
                           <Text
-                            className="!text-3xl font-semibold"
+                            className="text-3xl! font-semibold"
                             style={{ color: "#faad14" }}
                           >
                             {constituency.margin_of_victory.toLocaleString()}{" "}
@@ -436,7 +455,7 @@ export default function ConstituencyDetailsPage() {
                           </Text>
                           <div className="flex items-center">
                             <Text
-                              className="!text-3xl font-semibold"
+                              className="text-3xl! font-semibold"
                               style={{ color: "#faad14" }}
                             >
                               {constituency.margin_percentage}%
@@ -451,6 +470,15 @@ export default function ConstituencyDetailsPage() {
             </div>
           </Card>
         )}
+
+        {/* Constituency Drawer */}
+        <ConstituencyDrawer
+          visible={drawerVisible}
+          onClose={handleCloseDrawer}
+          electionYear={electionYear}
+          electionNumber={constituency?.election || 1}
+          constituency={editingConstituency}
+        />
       </div>
     </DashboardLayout>
   );

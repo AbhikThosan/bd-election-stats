@@ -14,6 +14,7 @@ import {
   Select,
   Space,
   Divider,
+  Popconfirm,
 } from "antd";
 import {
   CalendarOutlined,
@@ -29,7 +30,12 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
-import { useGetConstituenciesByElectionYearQuery } from "@/features/constituencies/slices/constituenciesApiSlice";
+import toast from "react-hot-toast";
+import {
+  useGetConstituenciesByElectionYearQuery,
+  useDeleteConstituencyMutation,
+  Constituency,
+} from "@/features/constituencies/slices/constituenciesApiSlice";
 import { useGetElectionsQuery } from "@/features/elections/slices/electionsApiSlice";
 import { ConstituencyDrawer } from "@/features/constituencies/components/ConstituencyDrawer";
 import { UploadModal } from "@/features/constituencies/components/UploadModal";
@@ -59,6 +65,8 @@ export default function ConstituenciesPage() {
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [editingConstituency, setEditingConstituency] =
+    useState<Constituency | null>(null);
 
   const { data, isLoading, error } = useGetConstituenciesByElectionYearQuery({
     electionYear,
@@ -82,6 +90,8 @@ export default function ConstituenciesPage() {
   } = useUploadFile({
     electionYear,
   });
+
+  const [deleteConstituency] = useDeleteConstituencyMutation();
 
   const handleSearch = (value: string) => {
     setFilters((prev) => ({ ...prev, search: value, page: 1 }));
@@ -126,22 +136,41 @@ export default function ConstituenciesPage() {
     router.push(`/constituencies/${electionYear}/${constituencyNumber}`);
   };
 
-  const handleEdit = (constituencyNumber: number) => {
-    // TODO: Implement edit functionality
-    console.log("Edit constituency:", constituencyNumber);
+  const handleEdit = (constituency: Constituency) => {
+    setEditingConstituency(constituency);
+    setDrawerVisible(true);
   };
 
-  const handleDelete = (constituencyNumber: number) => {
-    // TODO: Implement delete functionality
-    console.log("Delete constituency:", constituencyNumber);
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await deleteConstituency(id).unwrap();
+      toast.success(response.message || "Constituency deleted successfully", {
+        duration: 4000,
+        position: "top-center",
+      });
+    } catch (error: unknown) {
+      const apiError = error as {
+        data?: { message?: string };
+        message?: string;
+      };
+      const errorMessage =
+        apiError?.data?.message || "Failed to delete constituency";
+
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: "top-center",
+      });
+    }
   };
 
   const handleCreateConstituency = () => {
+    setEditingConstituency(null);
     setDrawerVisible(true);
   };
 
   const handleCloseDrawer = () => {
     setDrawerVisible(false);
+    setEditingConstituency(null);
   };
 
   const handleCloseStatusModal = () => {
@@ -497,20 +526,25 @@ export default function ConstituenciesPage() {
                   <Button
                     type="default"
                     icon={<EditOutlined />}
-                    onClick={() => handleEdit(constituency.constituency_number)}
+                    onClick={() => handleEdit(constituency)}
                     size="small"
                     title="Edit"
                   />
-                  <Button
-                    type="default"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() =>
-                      handleDelete(constituency.constituency_number)
-                    }
-                    size="small"
-                    title="Delete"
-                  />
+                  <Popconfirm
+                    title="Delete Constituency"
+                    description="Are you sure you want to delete this constituency?"
+                    onConfirm={() => handleDelete(constituency._id)}
+                    okText="Yes"
+                    cancelText="No"
+                  >
+                    <Button
+                      type="default"
+                      danger
+                      icon={<DeleteOutlined />}
+                      size="small"
+                      title="Delete"
+                    />
+                  </Popconfirm>
                 </div>
               </div>
             </Card>
@@ -564,6 +598,7 @@ export default function ConstituenciesPage() {
           electionNumber={
             currentElection?.election || data?.constituencies[0]?.election || 1
           }
+          constituency={editingConstituency}
         />
       </div>
     </DashboardLayout>

@@ -84,6 +84,15 @@ export interface CreateConstituencyData {
   participant_details: ConstituencyParticipant[];
 }
 
+export interface DeleteConstituencyResponse {
+  message: string;
+}
+
+export interface UpdateConstituencyResponse {
+  message: string;
+  constituency: Constituency;
+}
+
 export interface BulkUploadProgress {
   processed: number;
   total: number;
@@ -247,6 +256,27 @@ export const constituenciesApiSlice = createApi({
         { type: "Constituency", id: election_year },
       ],
     }),
+    updateConstituency: builder.mutation<
+      UpdateConstituencyResponse,
+      { id: string; data: CreateConstituencyData }
+    >({
+      query: ({ id, data }) => ({
+        url: `/constituency-results/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Constituency", id },
+        "Constituency",
+      ],
+    }),
+    deleteConstituency: builder.mutation<DeleteConstituencyResponse, string>({
+      query: (id) => ({
+        url: `/constituency-results/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Constituency"],
+    }),
     getBulkUploadStatus: builder.query<BulkUploadStatus, string>({
       query: (uploadId) => ({
         url: `/constituency-results/bulk-upload/${uploadId}`,
@@ -320,6 +350,8 @@ export const constituenciesApiSlice = createApi({
 export const {
   useGetConstituenciesByElectionYearQuery,
   useCreateConstituencyMutation,
+  useUpdateConstituencyMutation,
+  useDeleteConstituencyMutation,
   useGetBulkUploadStatusQuery,
   useGetBulkUploadErrorsQuery,
   useGetConstituencyByNumberQuery,

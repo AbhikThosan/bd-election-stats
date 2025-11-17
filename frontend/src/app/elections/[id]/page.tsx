@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Card,
@@ -21,8 +21,13 @@ import {
   ArrowLeftOutlined,
   HomeOutlined,
   ArrowRightOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
-import { useGetElectionByIdQuery } from "@/features/elections/slices/electionsApiSlice";
+import {
+  useGetElectionByIdQuery,
+  Election,
+} from "@/features/elections/slices/electionsApiSlice";
+import { ElectionDrawer } from "@/features/elections/components/ElectionDrawer";
 import { ElectionCharts } from "@/features/elections/components/ElectionCharts";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { AiOutlineNumber } from "react-icons/ai";
@@ -37,11 +42,26 @@ export default function ElectionDetailsPage() {
   const router = useRouter();
   const electionId = params.id as string;
 
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [editingElection, setEditingElection] = useState<Election | null>(null);
+
   const {
     data: election,
     isLoading,
     error,
   } = useGetElectionByIdQuery(electionId);
+
+  const handleEdit = () => {
+    if (election) {
+      setEditingElection(election);
+      setDrawerVisible(true);
+    }
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerVisible(false);
+    setEditingElection(null);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -124,7 +144,11 @@ export default function ElectionDetailsPage() {
               </Title>
             </div>
           </div>
-          <div>
+          <div className="flex gap-2">
+            <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
+              <span className="hidden sm:inline">Edit Election</span>
+              <span className="sm:hidden">Edit</span>
+            </Button>
             <Button
               onClick={() =>
                 router.push(`/constituencies/${election.election_year}`)
@@ -163,7 +187,7 @@ export default function ElectionDetailsPage() {
                               style={{ color: "#1890ff" }}
                             />
                             <Text
-                              className="!text-3xl font-semibold"
+                              className="text-3xl! font-semibold"
                               style={{ color: "#1890ff" }}
                             >
                               {election.election}
@@ -181,7 +205,7 @@ export default function ElectionDetailsPage() {
                               style={{ fontSize: 32, color: "#52c41a" }}
                             />
                             <Text
-                              className="!text-3xl font-semibold"
+                              className="text-3xl! font-semibold"
                               style={{ color: "#52c41a" }}
                             >
                               {election.election_year}
@@ -228,7 +252,7 @@ export default function ElectionDetailsPage() {
                               style={{ color: "#1890ff" }}
                             />
                             <Text
-                              className="!text-3xl font-semibold"
+                              className="text-3xl! font-semibold"
                               style={{ color: "#1890ff" }}
                             >
                               {election.total_constituencies}
@@ -247,7 +271,7 @@ export default function ElectionDetailsPage() {
                               style={{ color: "#52c41a" }}
                             />
                             <Text
-                              className="!text-3xl font-semibold"
+                              className="text-3xl! font-semibold"
                               style={{ color: "#52c41a" }}
                             >
                               {election.total_valid_vote?.toLocaleString() ||
@@ -267,7 +291,7 @@ export default function ElectionDetailsPage() {
                               style={{ color: "#fa1414" }}
                             />
                             <Text
-                              className="!text-3xl font-semibold"
+                              className="text-3xl! font-semibold"
                               style={{ color: "#fa1414" }}
                             >
                               {election.cancelled_vote?.toLocaleString() ||
@@ -284,7 +308,7 @@ export default function ElectionDetailsPage() {
                           <div className="flex items-center gap-2">
                             <GiVote size={32} style={{ color: "#1890ff" }} />
                             <Text
-                              className="!text-3xl font-semibold"
+                              className="text-3xl! font-semibold"
                               style={{ color: "#1890ff" }}
                             >
                               {election.total_vote_cast?.toLocaleString() ||
@@ -305,7 +329,7 @@ export default function ElectionDetailsPage() {
                           </Text>
                           <div className="flex items-center">
                             <Text
-                              className="!text-3xl font-semibold"
+                              className="text-3xl! font-semibold"
                               style={{ color: "#52c41a" }}
                             >
                               {election.percent_valid_vote
@@ -322,7 +346,7 @@ export default function ElectionDetailsPage() {
                           </Text>
                           <div className="flex items-center">
                             <Text
-                              className="!text-3xl font-semibold"
+                              className="text-3xl! font-semibold"
                               style={{ color: "#fa1414" }}
                             >
                               {election.percent_cancelled_vote
@@ -341,7 +365,7 @@ export default function ElectionDetailsPage() {
                           </Text>
                           <div className="flex items-center">
                             <Text
-                              className="!text-3xl font-semibold"
+                              className="text-3xl! font-semibold"
                               style={{ color: "#1890ff" }}
                             >
                               {election.percent_total_vote_cast
@@ -462,6 +486,13 @@ export default function ElectionDetailsPage() {
               children: <ElectionCharts election={election} />,
             },
           ]}
+        />
+
+        {/* Election Drawer */}
+        <ElectionDrawer
+          visible={drawerVisible}
+          onClose={handleCloseDrawer}
+          election={editingElection}
         />
       </div>
     </DashboardLayout>

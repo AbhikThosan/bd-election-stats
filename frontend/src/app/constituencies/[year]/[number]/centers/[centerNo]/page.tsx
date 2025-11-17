@@ -155,7 +155,7 @@ export default function CenterDetailsPage() {
                     href={center.map_link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 text-sm ring-1 ring-blue-600 rounded-md !px-2 !py-1 ml-2 inline-flex items-center"
+                    className="text-blue-600 text-sm ring-1 ring-blue-600 rounded-md px-2! py-1! ml-2 inline-flex items-center"
                   >
                     <EnvironmentOutlined className="mr-1" /> Open in Maps
                   </a>
@@ -172,7 +172,7 @@ export default function CenterDetailsPage() {
               Center {center.center_no}
             </Text>
             <div>
-              <div className="!text-md font-semibold !text-[#318019] inline-flex items-center gap-2">
+              <div className="text-md! font-semibold text-[#318019]! inline-flex items-center gap-2">
                 <GiPlayerBase size={32} style={{ color: "#318019" }} />
                 {center.center}
               </div>
@@ -185,7 +185,7 @@ export default function CenterDetailsPage() {
             </Text>
             <div className="flex items-center gap-2">
               <MdOutlineChair size={32} style={{ color: "#1890ff" }} />
-              <Text className="!mb-0 !text-[#1890ff] !text-lg font-semibold">
+              <Text className="mb-0! text-[#1890ff]! text-lg! font-semibold">
                 {center.constituency_name}
               </Text>
             </div>
@@ -197,7 +197,7 @@ export default function CenterDetailsPage() {
               </Text>
               <div className="flex items-center gap-2">
                 <CalendarOutlined style={{ fontSize: 32, color: "#722ed1" }} />
-                <Text className="!text-xl font-semibold !text-[#722ed1]">
+                <Text className="text-xl! font-semibold text-[#722ed1]!">
                   {electionYear}
                 </Text>
               </div>
@@ -229,7 +229,7 @@ export default function CenterDetailsPage() {
                     <BiMaleFemale size={32} style={{ color: "#05e0b1" }} />
                   )}
                   <Text
-                    className="!text-3xl font-semibold capitalize"
+                    className="text-3xl! font-semibold capitalize"
                     style={{ color: "#05e0b1" }}
                   >
                     {center.gender}
@@ -245,7 +245,7 @@ export default function CenterDetailsPage() {
                 <div className="flex items-center gap-2">
                   <LiaUsersSolid size={32} style={{ color: "#3bd0eb" }} />
                   <Text
-                    className="!text-3xl font-semibold"
+                    className="text-3xl! font-semibold"
                     style={{ color: "#3bd0eb" }}
                   >
                     {center.total_voters}
@@ -261,7 +261,7 @@ export default function CenterDetailsPage() {
                 <div className="flex items-center gap-2">
                   <HiReceiptPercent size={32} style={{ color: "#722ed1" }} />
                   <Text
-                    className="!text-3xl font-semibold"
+                    className="text-3xl! font-semibold"
                     style={{ color: "#722ed1" }}
                   >
                     {center.turnout_percentage} %
@@ -282,7 +282,7 @@ export default function CenterDetailsPage() {
                 <div className="flex items-center gap-2">
                   <GiVote size={32} style={{ color: "#1890ff" }} />
                   <Text
-                    className="!text-3xl font-semibold"
+                    className="text-3xl! font-semibold"
                     style={{ color: "#1890ff" }}
                   >
                     {center.total_votes_cast}
@@ -298,7 +298,7 @@ export default function CenterDetailsPage() {
                 <div className="flex items-center gap-2">
                   <LiaVoteYeaSolid size={32} style={{ color: "#52c41a" }} />
                   <Text
-                    className="!text-3xl font-semibold"
+                    className="text-3xl! font-semibold"
                     style={{ color: "#52c41a" }}
                   >
                     {center.total_valid_votes}
@@ -317,7 +317,7 @@ export default function CenterDetailsPage() {
                     style={{ color: "#f5222d" }}
                   />
                   <Text
-                    className="!text-3xl font-semibold"
+                    className="text-3xl! font-semibold"
                     style={{ color: "#f5222d" }}
                   >
                     {center.total_invalid_votes}
@@ -353,11 +353,11 @@ export default function CenterDetailsPage() {
                       <br />
                       <Tag color="blue">{participant.symbol}</Tag>
                     </div>
-                    <Divider className="!my-0" />
+                    <Divider className="my-0!" />
                     <div className="text-center">
                       <Text className="text-gray-500">Votes:</Text>
                       <br />
-                      <Text strong className="text-blue-600 text-lg">
+                      <Text strong className="text-blue-600 text-lg!">
                         {participant.vote?.toLocaleString() || "N/A"}
                       </Text>
                     </div>
