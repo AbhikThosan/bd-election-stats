@@ -263,7 +263,7 @@ export default function ConstituenciesPage() {
               <div className="flex items-center gap-2">
                 <MdOutlineChair size={32} style={{ color: "#1890ff" }} />
                 <Text
-                  className="!text-3xl font-semibold"
+                  className="text-3xl! font-semibold"
                   style={{ color: "#1890ff" }}
                 >
                   {data.total_constituencies}
@@ -279,7 +279,7 @@ export default function ConstituenciesPage() {
               <div className="flex items-center gap-2">
                 <BarChartOutlined style={{ fontSize: 32, color: "#52c41a" }} />
                 <Text
-                  className="!text-3xl font-semibold"
+                  className="text-3xl! font-semibold"
                   style={{ color: "#52c41a" }}
                 >
                   {data.total}
@@ -296,7 +296,7 @@ export default function ConstituenciesPage() {
               <div className="flex items-center gap-2">
                 <CalendarOutlined style={{ fontSize: 32, color: "#722ed1" }} />
                 <Text
-                  className="!text-3xl font-semibold"
+                  className="text-3xl! font-semibold"
                   style={{ color: "#722ed1" }}
                 >
                   {data.election_year}
@@ -399,7 +399,6 @@ export default function ConstituenciesPage() {
             <Card
               key={constituency._id}
               className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-              bodyStyle={{ padding: "16px" }}
             >
               <div className="space-y-3">
                 {/* Header */}

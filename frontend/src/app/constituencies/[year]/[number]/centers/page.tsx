@@ -6,7 +6,6 @@ import {
   Card,
   Row,
   Col,
-  Statistic,
   Typography,
   Spin,
   Button,
@@ -17,9 +16,6 @@ import {
 } from "antd";
 import {
   CalendarOutlined,
-  TeamOutlined,
-  TrophyOutlined,
-  BarChartOutlined,
   ArrowLeftOutlined,
   HomeOutlined,
   FilterOutlined,
@@ -312,7 +308,7 @@ export default function CentersPage() {
               <div className="flex items-center gap-2">
                 <GiPlayerBase size={32} style={{ color: "#faad14" }} />
                 <Text
-                  className="!text-3xl font-semibold"
+                  className="text-3xl! font-semibold"
                   style={{ color: "#faad14" }}
                 >
                   {data.total}
@@ -325,7 +321,7 @@ export default function CentersPage() {
             <p>{`Constituency ${constituencyNumber}`} </p>
             <div className="flex items-center gap-2">
               <MdOutlineChair size={32} style={{ color: "#1890ff" }} />
-              <p className="!mb-0 text-[#1890ff] !text-lg font-semibold">
+              <p className="mb-0! text-[#1890ff] text-lg! font-semibold">
                 {constituencyData?.constituency_name}{" "}
               </p>
             </div>
@@ -339,7 +335,7 @@ export default function CentersPage() {
               <div className="flex items-center gap-2">
                 <CalendarOutlined style={{ fontSize: 32, color: "#722ed1" }} />
                 <Text
-                  className="!text-3xl font-semibold"
+                  className="text-3xl! font-semibold"
                   style={{ color: "#722ed1" }}
                 >
                   {data.election_year}
@@ -437,7 +433,6 @@ export default function CentersPage() {
             <Card
               key={center._id}
               className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-              bodyStyle={{ padding: "16px" }}
             >
               <div className="space-y-3">
                 {/* Header */}

@@ -4,11 +4,11 @@ import {
   Tag,
   Typography,
   Card,
-  message,
   Popconfirm,
   Pagination,
   Spin,
 } from "antd";
+import toast from "react-hot-toast";
 import {
   EyeOutlined,
   EditOutlined,
@@ -20,7 +20,9 @@ import {
   useGetElectionsQuery,
   useDeleteElectionMutation,
   Election,
+  DeleteElectionErrorResponse,
 } from "@/features/elections/slices/electionsApiSlice";
+import { ApiErrorResponse } from "@/types/api";
 import { useRouter } from "next/navigation";
 import { ElectionDrawer } from "./ElectionDrawer";
 import { TbSum } from "react-icons/tb";
@@ -34,6 +36,7 @@ export const ElectionsTable: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [editingElection, setEditingElection] = useState<Election | null>(null);
   const router = useRouter();
 
   const { data, isLoading } = useGetElectionsQuery({
@@ -48,16 +51,37 @@ export const ElectionsTable: React.FC = () => {
   };
 
   const handleEdit = (record: Election) => {
-    message.info(`Editing election: ${record.election_year}`);
-    // TODO: Implement edit functionality
+    setEditingElection(record);
+    setDrawerVisible(true);
   };
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteElection(id).unwrap();
-      message.success("Election deleted successfully");
-    } catch {
-      message.error("Failed to delete election");
+      const response = await deleteElection(id).unwrap();
+      toast.success(response.message || "Election deleted successfully", {
+        duration: 4000,
+        position: "top-center",
+      });
+    } catch (error: unknown) {
+      // Handle error response with constituency results count
+      const apiError = error as ApiErrorResponse & {
+        data?: DeleteElectionErrorResponse;
+      };
+      const errorMessage =
+        apiError?.data?.message || "Failed to delete election";
+      const constituencyResultsCount = apiError?.data?.constituencyResultsCount;
+
+      let fullErrorMessage = errorMessage;
+      if (constituencyResultsCount !== undefined) {
+        fullErrorMessage = `${errorMessage} (${constituencyResultsCount} constituency result${
+          constituencyResultsCount !== 1 ? "s" : ""
+        } exist)`;
+      }
+
+      toast.error(fullErrorMessage, {
+        duration: 5000,
+        position: "top-center",
+      });
     }
   };
 
@@ -66,11 +90,13 @@ export const ElectionsTable: React.FC = () => {
   };
 
   const handleCreateElection = () => {
+    setEditingElection(null);
     setDrawerVisible(true);
   };
 
   const handleCloseDrawer = () => {
     setDrawerVisible(false);
+    setEditingElection(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -115,7 +141,7 @@ export const ElectionsTable: React.FC = () => {
             <div className="flex items-center gap-2">
               <TbSum size={32} style={{ color: "#3f8600" }} />
               <Text
-                className="!text-3xl font-semibold"
+                className="text-3xl! font-semibold"
                 style={{ color: "#3f8600" }}
               >
                 {data?.total || 0}
@@ -131,7 +157,7 @@ export const ElectionsTable: React.FC = () => {
             <div className="flex items-center gap-2">
               <AiOutlineFileDone size={32} style={{ color: "#08979c" }} />
               <Text
-                className="!text-3xl font-semibold"
+                className="text-3xl! font-semibold"
                 style={{ color: "#08979c" }}
               >
                 {data?.elections?.filter((e) => e.status === "completed")
@@ -148,7 +174,7 @@ export const ElectionsTable: React.FC = () => {
             <div className="flex items-center gap-2">
               <FaHourglassStart size={32} style={{ color: "#cf1322" }} />
               <Text
-                className="!text-3xl font-semibold"
+                className="text-3xl! font-semibold"
                 style={{ color: "#cf1322" }}
               >
                 {data?.elections?.filter((e) => e.status === "ongoing")
@@ -174,7 +200,6 @@ export const ElectionsTable: React.FC = () => {
               <Card
                 key={election._id}
                 className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-                bodyStyle={{ padding: "16px" }}
               >
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
@@ -204,7 +229,7 @@ export const ElectionsTable: React.FC = () => {
                   <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                     <MdOutlineChair
                       size={32}
-                      className="text-blue-600 text-lg flex-shrink-0"
+                      className="text-blue-600 text-lg shrink-0"
                     />
                     <div className="min-w-0">
                       <div className="text-lg font-semibold text-gray-900">
@@ -281,7 +306,11 @@ export const ElectionsTable: React.FC = () => {
       </div>
 
       {/* Election Drawer */}
-      <ElectionDrawer visible={drawerVisible} onClose={handleCloseDrawer} />
+      <ElectionDrawer
+        visible={drawerVisible}
+        onClose={handleCloseDrawer}
+        election={editingElection}
+      />
     </div>
   );
 };

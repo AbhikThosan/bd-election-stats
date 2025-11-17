@@ -6,7 +6,7 @@ export interface Election {
   election: number;
   election_year: number;
   total_constituencies: number;
-  status: 'scheduled' | 'ongoing' | 'completed';
+  status: "scheduled" | "ongoing" | "completed";
   total_valid_vote?: number;
   cancelled_vote?: number;
   total_vote_cast?: number;
@@ -32,6 +32,21 @@ export interface ElectionsResponse {
   limit: number;
 }
 
+export interface DeleteElectionResponse {
+  message: string;
+}
+
+export interface DeleteElectionErrorResponse {
+  message: string;
+  error: string;
+  constituencyResultsCount?: number;
+}
+
+export interface UpdateElectionResponse {
+  message: string;
+  election: Election;
+}
+
 export const electionsApiSlice = createApi({
   reducerPath: "electionsApi",
   baseQuery: fetchBaseQuery({
@@ -46,7 +61,10 @@ export const electionsApiSlice = createApi({
   }),
   tagTypes: ["Election"],
   endpoints: (builder) => ({
-    getElections: builder.query<ElectionsResponse, { page?: number; limit?: number }>({
+    getElections: builder.query<
+      ElectionsResponse,
+      { page?: number; limit?: number }
+    >({
       query: ({ page = 1, limit = 10 } = {}) => ({
         url: "/public/elections",
         method: "GET",
@@ -69,15 +87,21 @@ export const electionsApiSlice = createApi({
       }),
       invalidatesTags: ["Election"],
     }),
-    updateElection: builder.mutation<Election, { id: string; data: Partial<Election> }>({
+    updateElection: builder.mutation<
+      UpdateElectionResponse,
+      { id: string; data: Partial<Election> }
+    >({
       query: ({ id, data }) => ({
         url: `/elections/${id}`,
         method: "PUT",
         body: data,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: "Election", id }],
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Election", id },
+        "Election",
+      ],
     }),
-    deleteElection: builder.mutation<void, string>({
+    deleteElection: builder.mutation<DeleteElectionResponse, string>({
       query: (id) => ({
         url: `/elections/${id}`,
         method: "DELETE",

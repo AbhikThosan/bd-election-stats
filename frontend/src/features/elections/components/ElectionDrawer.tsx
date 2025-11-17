@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Drawer,
   Form,
@@ -6,7 +6,6 @@ import {
   InputNumber,
   Select,
   Button,
-  message,
   Row,
   Col,
   Divider,
@@ -15,12 +14,17 @@ import {
 } from 'antd';
 import {
   PlusOutlined,
+  EditOutlined,
   SaveOutlined,
   CloseOutlined,
   MinusCircleOutlined,
 } from '@ant-design/icons';
-import Swal from 'sweetalert2';
-import { useCreateElectionMutation } from '@/features/elections/slices/electionsApiSlice';
+import toast from 'react-hot-toast';
+import {
+  useCreateElectionMutation,
+  useUpdateElectionMutation,
+  Election,
+} from '@/features/elections/slices/electionsApiSlice';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -28,6 +32,7 @@ const { Title, Text } = Typography;
 interface ElectionDrawerProps {
   visible: boolean;
   onClose: () => void;
+  election?: Election | null;
 }
 
 interface ParticipantDetail {
@@ -56,60 +61,124 @@ interface ElectionFormData {
 export const ElectionDrawer: React.FC<ElectionDrawerProps> = ({
   visible,
   onClose,
+  election,
 }) => {
   const [form] = Form.useForm();
-  const [createElection, { isLoading }] = useCreateElectionMutation();
+  const [createElection, { isLoading: isCreating }] =
+    useCreateElectionMutation();
+  const [updateElection, { isLoading: isUpdating }] =
+    useUpdateElectionMutation();
+
+  const isEditMode = !!election;
+  const isLoading = isCreating || isUpdating;
+
+  // Prefill form when editing
+  useEffect(() => {
+    if (visible && election) {
+      form.setFieldsValue({
+        election: election.election,
+        election_year: election.election_year,
+        total_constituencies: election.total_constituencies,
+        status: election.status,
+        total_valid_vote: election.total_valid_vote,
+        cancelled_vote: election.cancelled_vote,
+        total_vote_cast: election.total_vote_cast,
+        percent_valid_vote: election.percent_valid_vote,
+        percent_cancelled_vote: election.percent_cancelled_vote,
+        percent_total_vote_cast: election.percent_total_vote_cast,
+        participant_details:
+          election.participant_details && election.participant_details.length > 0
+            ? election.participant_details
+            : [
+                {
+                  party: 'Awami League',
+                  symbol: 'Boat',
+                  vote_obtained: 0,
+                  percent_vote_obtain: 0,
+                  seat_obtain: 0,
+                  percent_seat_obtain: 0,
+                },
+                {
+                  party: 'BNP',
+                  symbol: 'Paddy Sheaf',
+                  vote_obtained: 0,
+                  percent_vote_obtain: 0,
+                  seat_obtain: 0,
+                  percent_seat_obtain: 0,
+                },
+              ],
+      });
+    } else if (visible && !election) {
+      // Reset form for create mode
+      form.resetFields();
+    }
+  }, [visible, election, form]);
 
   const handleSubmit = async (values: ElectionFormData) => {
     try {
       // Ensure participant_details is provided with at least 2 parties
+      // Remove _id fields from participant_details (MongoDB internal IDs)
+      const cleanedParticipantDetails = (values.participant_details || [
+        {
+          party: 'Awami League',
+          symbol: 'Boat',
+          vote_obtained: 0,
+          percent_vote_obtain: 0,
+          seat_obtain: 0,
+          percent_seat_obtain: 0,
+        },
+        {
+          party: 'BNP',
+          symbol: 'Paddy Sheaf',
+          vote_obtained: 0,
+          percent_vote_obtain: 0,
+          seat_obtain: 0,
+          percent_seat_obtain: 0,
+        },
+      ]).map(({ _id, ...participant }) => participant);
+
       const formData = {
         ...values,
-        participant_details: values.participant_details || [
-          {
-            party: 'Awami League',
-            symbol: 'Boat',
-            vote_obtained: 0,
-            percent_vote_obtain: 0,
-            seat_obtain: 0,
-            percent_seat_obtain: 0,
-          },
-          {
-            party: 'BNP',
-            symbol: 'Paddy Sheaf',
-            vote_obtained: 0,
-            percent_vote_obtain: 0,
-            seat_obtain: 0,
-            percent_seat_obtain: 0,
-          },
-        ],
+        participant_details: cleanedParticipantDetails,
       };
 
-      await createElection(formData).unwrap();
-      message.success('Election created successfully!');
+      if (isEditMode && election) {
+        const response = await updateElection({
+          id: election._id,
+          data: formData,
+        }).unwrap();
+        toast.success(response.message || 'Election updated successfully!', {
+          duration: 4000,
+          position: 'top-center',
+        });
+      } else {
+        await createElection(formData).unwrap();
+        toast.success('Election created successfully!', {
+          duration: 4000,
+          position: 'top-center',
+        });
+      }
+
       form.resetFields();
       onClose();
     } catch (error: unknown) {
-      console.error('Create election error:', error);
-      
-      // Show error in sweet alert
-      const errorMessage = (error as { data?: { message?: string }; message?: string })?.data?.message || 
-                          (error as { data?: { message?: string }; message?: string })?.message || 
-                          'Failed to create election. Please check your authentication.';
-      
-      Swal.fire({
-        icon: 'error',
-        title: 'Election Creation Failed',
-        text: errorMessage,
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#dc2626',
-        showCloseButton: true,
-        customClass: {
-          popup: 'swal-popup',
-          title: 'swal-title',
-          htmlContainer: 'swal-content',
-          confirmButton: 'swal-confirm-button'
-        }
+      console.error(
+        `${isEditMode ? 'Update' : 'Create'} election error:`,
+        error
+      );
+
+      const apiError = error as {
+        data?: { message?: string };
+        message?: string;
+      };
+      const errorMessage =
+        apiError?.data?.message ||
+        apiError?.message ||
+        `Failed to ${isEditMode ? 'update' : 'create'} election. Please check your authentication.`;
+
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: 'top-center',
       });
     }
   };
@@ -120,40 +189,22 @@ export const ElectionDrawer: React.FC<ElectionDrawerProps> = ({
   };
 
   return (
-    <>
-      <style jsx global>{`
-        .swal-popup {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-          border-radius: 8px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-        .swal-title {
-          font-size: 20px;
-          font-weight: 600;
-          color: #dc2626;
-        }
-        .swal-content {
-          font-size: 16px;
-          color: #374151;
-          line-height: 1.5;
-        }
-        .swal-confirm-button {
-          background-color: #dc2626 !important;
-          border-radius: 6px !important;
-          font-weight: 500 !important;
-          padding: 8px 24px !important;
-        }
-        .swal-confirm-button:hover {
-          background-color: #b91c1c !important;
-        }
-      `}</style>
-      <Drawer
-        title={
-          <div className="flex items-center space-x-2">
-            <PlusOutlined className="text-blue-600" />
-            <span>Create New Election</span>
-          </div>
-        }
+    <Drawer
+      title={
+        <div className="flex items-center space-x-2">
+          {isEditMode ? (
+            <>
+              <EditOutlined className="text-blue-600" />
+              <span>Edit Election</span>
+            </>
+          ) : (
+            <>
+              <PlusOutlined className="text-blue-600" />
+              <span>Create New Election</span>
+            </>
+          )}
+        </div>
+      }
         open={visible}
         onClose={handleCancel}
         width={720}
@@ -168,7 +219,7 @@ export const ElectionDrawer: React.FC<ElectionDrawerProps> = ({
               loading={isLoading}
               icon={<SaveOutlined />}
             >
-              Create Election
+              {isEditMode ? 'Update Election' : 'Create Election'}
             </Button>
           </div>
         }
@@ -513,6 +564,5 @@ export const ElectionDrawer: React.FC<ElectionDrawerProps> = ({
         </div>
       </Form>
     </Drawer>
-    </>
   );
 };

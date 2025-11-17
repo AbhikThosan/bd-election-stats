@@ -7,7 +7,6 @@ import {
   Card,
   Row,
   Col,
-  Statistic,
   Typography,
   Spin,
   Button,
@@ -17,7 +16,6 @@ import {
 } from "antd";
 import {
   CalendarOutlined,
-  TeamOutlined,
   BarChartOutlined,
   ArrowLeftOutlined,
   HomeOutlined,
