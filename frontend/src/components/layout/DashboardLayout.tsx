@@ -1,13 +1,13 @@
 import React from "react";
 import { Layout, Typography, Button } from "antd";
-import { LogoutOutlined } from "@ant-design/icons";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "@/store/store";
+import { LogoutOutlined, LoginOutlined } from "@ant-design/icons";
+import { useDispatch } from "react-redux";
 import { logout } from "@/features/auth/slices/authCredentialSlice";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 const { Header, Content } = Layout;
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -18,18 +18,22 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 }) => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated } = useAuth();
 
   const handleLogout = () => {
     dispatch(logout());
+    router.push("/");
+  };
+
+  const handleLogin = () => {
     router.push("/login");
   };
 
   return (
-    <Layout className="min-h-screen bg-gray-50">
+    <Layout className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <Header
-        className="bg-white shadow-sm border-b border-gray-100 px-4 lg:px-6 flex items-center justify-between"
+        className="bg-white shadow-sm border-b border-gray-100 px-4 lg:px-6 flex items-center justify-between flex-shrink-0"
         style={{
           background: "#ffffff",
           height: "64px",
@@ -44,48 +48,33 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         </div>
 
         <div className="flex items-center space-x-3">
-          {/* Notifications */}
-          {/* <Button 
-            type="text" 
-            icon={<BellOutlined />} 
-            className="text-gray-500 hover:text-blue-500 hover:bg-blue-50"
-            size="middle"
-          /> */}
-
-          {/* User Info */}
-          {/* <div className="flex items-center space-x-2">
-            <Avatar 
-              size="small" 
-              icon={<UserOutlined />} 
-              className="bg-blue-100 text-blue-600"
-            />
-            <div className="hidden sm:block">
-              <Text className="text-sm font-medium text-gray-700">
-                {user?.username}
-              </Text>
-              <br />
-              <Text className="text-xs text-gray-400 capitalize">
-                {user?.role}
-              </Text>
-            </div>
-          </div> */}
-
-          {/* Logout Button */}
-          <Button
-            type="text"
-            icon={<LogoutOutlined />}
-            onClick={handleLogout}
-            className="text-gray-500 hover:text-red-500 hover:bg-red-50"
-            size="middle"
-          >
-            <span className="hidden sm:inline">Logout</span>
-          </Button>
+          {isAuthenticated ? (
+            <Button
+              type="text"
+              icon={<LogoutOutlined />}
+              onClick={handleLogout}
+              className="text-gray-500 hover:text-red-500 hover:bg-red-50"
+              size="middle"
+            >
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
+          ) : (
+            <Button
+              type="primary"
+              icon={<LoginOutlined />}
+              onClick={handleLogin}
+              className="text-blue-600 hover:text-blue-700"
+              size="middle"
+            >
+              <span className="hidden sm:inline">Login</span>
+            </Button>
+          )}
         </div>
       </Header>
 
       {/* Main Content */}
-      <Content className="p-4 lg:p-6">
-        <div className="max-w-7xl mx-auto">{children}</div>
+      <Content className="p-4 lg:p-6 flex-1">
+        <div className="max-w-7xl mx-auto min-h-full">{children}</div>
       </Content>
     </Layout>
   );

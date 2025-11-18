@@ -43,6 +43,7 @@ import { BulkUploadStatusModal } from "@/features/constituencies/components/Bulk
 import { useUploadFile } from "@/features/constituencies/hooks/useUploadFile";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MdOutlineChair } from "react-icons/md";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -51,6 +52,7 @@ export default function ConstituenciesPage() {
   const params = useParams();
   const router = useRouter();
   const electionYear = parseInt(params.year as string);
+  const { isAuthenticated } = useAuth();
 
   const [filters, setFilters] = useState({
     page: 1,
@@ -199,7 +201,7 @@ export default function ConstituenciesPage() {
   if (error || !data) {
     return (
       <DashboardLayout>
-        <div className="text-center py-12">
+        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)] text-center py-12">
           <Text type="danger" className="text-lg">
             Failed to load constituencies for election year {electionYear}
           </Text>
@@ -220,7 +222,7 @@ export default function ConstituenciesPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 min-h-[calc(100vh-200px)]">
         {/* Breadcrumb */}
         <Breadcrumb
           items={[
@@ -265,21 +267,23 @@ export default function ConstituenciesPage() {
               </Title>
             </div>
           </div>
-          <div className="flex justify-end sm:justify-start gap-2">
-            <Button icon={<UploadOutlined />} onClick={handleUploadClick}>
-              Upload File
-            </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreateConstituency}
-              className="w-full sm:w-auto"
-              size="middle"
-            >
-              <span className="hidden sm:inline">Create Constituency</span>
-              <span className="sm:hidden">Create</span>
-            </Button>
-          </div>
+          {isAuthenticated && (
+            <div className="flex justify-end sm:justify-start gap-2">
+              <Button icon={<UploadOutlined />} onClick={handleUploadClick}>
+                Upload File
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleCreateConstituency}
+                className="w-full sm:w-auto"
+                size="middle"
+              >
+                <span className="hidden sm:inline">Create Constituency</span>
+                <span className="sm:hidden">Create</span>
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Statistics Cards */}
@@ -423,8 +427,15 @@ export default function ConstituenciesPage() {
         </Card>
 
         {/* Constituencies Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {data.constituencies.map((constituency) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-h-[400px]">
+          {data.constituencies.length === 0 ? (
+            <div className="flex flex-col justify-center items-center py-16 col-span-full min-h-[400px]">
+              <Text type="secondary" className="text-lg">
+                No constituencies found
+              </Text>
+            </div>
+          ) : (
+            data.constituencies.map((constituency) => (
             <Card
               key={constituency._id}
               className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
@@ -513,7 +524,7 @@ export default function ConstituenciesPage() {
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex justify-between items-center gap-2">
+                <div className={`flex items-center gap-2 ${isAuthenticated ? 'justify-between' : 'justify-center'}`}>
                   <Button
                     type="primary"
                     icon={<EyeOutlined />}
@@ -523,32 +534,37 @@ export default function ConstituenciesPage() {
                     size="small"
                     title="View Details"
                   />
-                  <Button
-                    type="default"
-                    icon={<EditOutlined />}
-                    onClick={() => handleEdit(constituency)}
-                    size="small"
-                    title="Edit"
-                  />
-                  <Popconfirm
-                    title="Delete Constituency"
-                    description="Are you sure you want to delete this constituency?"
-                    onConfirm={() => handleDelete(constituency._id)}
-                    okText="Yes"
-                    cancelText="No"
-                  >
-                    <Button
-                      type="default"
-                      danger
-                      icon={<DeleteOutlined />}
-                      size="small"
-                      title="Delete"
-                    />
-                  </Popconfirm>
+                  {isAuthenticated && (
+                    <>
+                      <Button
+                        type="default"
+                        icon={<EditOutlined />}
+                        onClick={() => handleEdit(constituency)}
+                        size="small"
+                        title="Edit"
+                      />
+                      <Popconfirm
+                        title="Delete Constituency"
+                        description="Are you sure you want to delete this constituency?"
+                        onConfirm={() => handleDelete(constituency._id)}
+                        okText="Yes"
+                        cancelText="No"
+                      >
+                        <Button
+                          type="default"
+                          danger
+                          icon={<DeleteOutlined />}
+                          size="small"
+                          title="Delete"
+                        />
+                      </Popconfirm>
+                    </>
+                  )}
                 </div>
               </div>
             </Card>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Pagination */}

@@ -27,6 +27,7 @@ import {
 import { ConstituencyDrawer } from "@/features/constituencies/components/ConstituencyDrawer";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { AiOutlineNumber } from "react-icons/ai";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { GiPlayerBase, GiTabletopPlayers, GiVote } from "react-icons/gi";
 import { HiReceiptPercent } from "react-icons/hi2";
 import { LiaUsersSolid, LiaVoteYeaSolid } from "react-icons/lia";
@@ -39,6 +40,7 @@ export default function ConstituencyDetailsPage() {
   const router = useRouter();
   const electionYear = parseInt(params.year as string);
   const constituencyNumber = parseInt(params.number as string);
+  const { isAuthenticated } = useAuth();
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [editingConstituency, setEditingConstituency] =
@@ -149,15 +151,17 @@ export default function ConstituencyDetailsPage() {
             </div>
           </div>
           <div className="flex justify-end sm:justify-start gap-2">
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              onClick={handleEdit}
-              className="w-full sm:w-auto"
-            >
-              <span className="hidden sm:inline">Edit Constituency</span>
-              <span className="sm:hidden">Edit</span>
-            </Button>
+            {isAuthenticated && (
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={handleEdit}
+                className="w-full sm:w-auto"
+              >
+                <span className="hidden sm:inline">Edit Constituency</span>
+                <span className="sm:hidden">Edit</span>
+              </Button>
+            )}
             <Button
               icon={<ArrowRightOutlined />}
               onClick={() =>

@@ -40,6 +40,7 @@ import { CenterBulkUploadStatusModal } from "@/features/constituencies/component
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { GiPlayerBase } from "react-icons/gi";
 import { MdOutlineChair } from "react-icons/md";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -49,6 +50,7 @@ export default function CentersPage() {
   const router = useRouter();
   const electionYear = parseInt(params.year as string);
   const constituencyNumber = parseInt(params.number as string);
+  const { isAuthenticated } = useAuth();
 
   const [filters, setFilters] = useState({
     page: 1,
@@ -234,7 +236,7 @@ export default function CentersPage() {
   if (error || !data) {
     return (
       <DashboardLayout>
-        <div className="text-center py-12">
+        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)] text-center py-12">
           <Text type="danger" className="text-lg">
             Failed to load centers for constituency #{constituencyNumber}
           </Text>
@@ -259,7 +261,7 @@ export default function CentersPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 min-h-[calc(100vh-200px)]">
         {/* Breadcrumb */}
         <Breadcrumb
           items={[
@@ -316,25 +318,27 @@ export default function CentersPage() {
               </Title>
             </div>
           </div>
-          <div className="flex justify-end sm:justify-start gap-2">
-            <Button
-              icon={<UploadOutlined />}
-              onClick={handleUploadClick}
-              className="w-full sm:w-auto"
-            >
-              <span className="hidden sm:inline">Upload File</span>
-              <span className="sm:hidden">Upload</span>
-            </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreateCenter}
-              className="w-full sm:w-auto"
-            >
-              <span className="hidden sm:inline">Create Center</span>
-              <span className="sm:hidden">Create</span>
-            </Button>
-          </div>
+          {isAuthenticated && (
+            <div className="flex justify-end sm:justify-start gap-2">
+              <Button
+                icon={<UploadOutlined />}
+                onClick={handleUploadClick}
+                className="w-full sm:w-auto"
+              >
+                <span className="hidden sm:inline">Upload File</span>
+                <span className="sm:hidden">Upload</span>
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleCreateCenter}
+                className="w-full sm:w-auto"
+              >
+                <span className="hidden sm:inline">Create Center</span>
+                <span className="sm:hidden">Create</span>
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Statistics Cards */}
@@ -467,95 +471,113 @@ export default function CentersPage() {
         </Card>
 
         {/* Centers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {data.centers.map((center) => (
-            <Card
-              key={center._id}
-              className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="space-y-3">
-                {/* Header */}
-                <div className="text-center">
-                  <Text strong className="text-lg text-gray-900">
-                    Center - {center.center_no}
-                  </Text>
-                  <br />
-                  <Text className="text-sm text-gray-600">{center.center}</Text>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-h-[400px]">
+          {data.centers.length === 0 ? (
+            <div className="flex flex-col justify-center items-center py-16 col-span-full min-h-[400px]">
+              <Text type="secondary" className="text-lg">
+                No centers found
+              </Text>
+            </div>
+          ) : (
+            data.centers.map((center) => (
+              <Card
+                key={center._id}
+                className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="space-y-3">
+                  {/* Header */}
+                  <div className="text-center">
+                    <Text strong className="text-lg text-gray-900">
+                      Center - {center.center_no}
+                    </Text>
+                    <br />
+                    <Text className="text-sm text-gray-600">
+                      {center.center}
+                    </Text>
+                  </div>
 
-                <div className="border-t border-gray-200 my-2" />
+                  <div className="border-t border-gray-200 my-2" />
 
-                {/* Statistics */}
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <Text className="text-gray-500">Total Voters:</Text>
-                    <Text strong>
-                      {center.total_voters?.toLocaleString() || "N/A"}
-                    </Text>
+                  {/* Statistics */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <Text className="text-gray-500">Total Voters:</Text>
+                      <Text strong>
+                        {center.total_voters?.toLocaleString() || "N/A"}
+                      </Text>
+                    </div>
+                    <div className="flex justify-between">
+                      <Text className="text-gray-500">Votes Cast:</Text>
+                      <Text strong className="text-blue-600">
+                        {center.total_votes_cast?.toLocaleString() || "N/A"}
+                      </Text>
+                    </div>
+                    <div className="flex justify-between">
+                      <Text className="text-gray-500">Turnout:</Text>
+                      <Text strong className="text-green-600">
+                        {center?.turnout_percentage
+                          ? `${center.turnout_percentage.toFixed(1)}%`
+                          : "N/A"}
+                      </Text>
+                    </div>
+                    <div className="flex justify-between">
+                      <Text className="text-gray-500">Valid Votes:</Text>
+                      <Text strong className="text-blue-600">
+                        {center.total_valid_votes?.toLocaleString() || "N/A"}
+                      </Text>
+                    </div>
+                    <div className="flex justify-between">
+                      <Text className="text-gray-500">Invalid Votes:</Text>
+                      <Text strong className="text-red-600">
+                        {center.total_invalid_votes?.toLocaleString() || "N/A"}
+                      </Text>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <Text className="text-gray-500">Votes Cast:</Text>
-                    <Text strong className="text-blue-600">
-                      {center.total_votes_cast?.toLocaleString() || "N/A"}
-                    </Text>
-                  </div>
-                  <div className="flex justify-between">
-                    <Text className="text-gray-500">Turnout:</Text>
-                    <Text strong className="text-green-600">
-                      {center?.turnout_percentage
-                        ? `${center.turnout_percentage.toFixed(1)}%`
-                        : "N/A"}
-                    </Text>
-                  </div>
-                  <div className="flex justify-between">
-                    <Text className="text-gray-500">Valid Votes:</Text>
-                    <Text strong className="text-blue-600">
-                      {center.total_valid_votes?.toLocaleString() || "N/A"}
-                    </Text>
-                  </div>
-                  <div className="flex justify-between">
-                    <Text className="text-gray-500">Invalid Votes:</Text>
-                    <Text strong className="text-red-600">
-                      {center.total_invalid_votes?.toLocaleString() || "N/A"}
-                    </Text>
-                  </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-gray-200">
-                  <Button
-                    type="primary"
-                    icon={<EyeOutlined />}
-                    onClick={() => handleViewDetails(center.center_no)}
-                    size="small"
-                    title="View Details"
-                  />
-                  <Button
-                    type="default"
-                    icon={<EditOutlined />}
-                    onClick={() => handleEdit(center)}
-                    size="small"
-                    title="Edit"
-                  />
-                  <Popconfirm
-                    title="Delete Center"
-                    description="Are you sure you want to delete this center?"
-                    onConfirm={() => handleDelete(center._id, center)}
-                    okText="Yes"
-                    cancelText="No"
+                  {/* Action Buttons */}
+                  <div
+                    className={`flex items-center gap-2 mt-3 pt-3 border-t border-gray-200 ${
+                      isAuthenticated ? "justify-between" : "justify-center"
+                    }`}
                   >
                     <Button
-                      type="default"
-                      danger
-                      icon={<DeleteOutlined />}
+                      type="primary"
+                      icon={<EyeOutlined />}
+                      onClick={() => handleViewDetails(center.center_no)}
                       size="small"
-                      title="Delete"
+                      title="View Details"
                     />
-                  </Popconfirm>
+                    {isAuthenticated && (
+                      <>
+                        <Button
+                          type="default"
+                          icon={<EditOutlined />}
+                          onClick={() => handleEdit(center)}
+                          size="small"
+                          title="Edit"
+                        />
+                        <Popconfirm
+                          title="Delete Center"
+                          description="Are you sure you want to delete this center?"
+                          onConfirm={() => handleDelete(center._id, center)}
+                          okText="Yes"
+                          cancelText="No"
+                        >
+                          <Button
+                            type="default"
+                            danger
+                            icon={<DeleteOutlined />}
+                            size="small"
+                            title="Delete"
+                          />
+                        </Popconfirm>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))
+          )}
         </div>
 
         {/* Pagination */}

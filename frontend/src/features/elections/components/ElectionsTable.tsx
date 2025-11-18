@@ -29,6 +29,7 @@ import { TbSum } from "react-icons/tb";
 import { AiOutlineFileDone } from "react-icons/ai";
 import { FaHourglassStart } from "react-icons/fa";
 import { MdOutlineChair } from "react-icons/md";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 const { Title, Text } = Typography;
 
@@ -38,6 +39,7 @@ export const ElectionsTable: React.FC = () => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [editingElection, setEditingElection] = useState<Election | null>(null);
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
 
   const { data, isLoading } = useGetElectionsQuery({
     page: currentPage,
@@ -113,7 +115,7 @@ export const ElectionsTable: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-[calc(100vh-200px)]">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -121,14 +123,16 @@ export const ElectionsTable: React.FC = () => {
             BD National Parliment Election Data
           </Title>
         </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          size="large"
-          onClick={handleCreateElection}
-        >
-          Create Election
-        </Button>
+        {isAuthenticated && (
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            size="large"
+            onClick={handleCreateElection}
+          >
+            Create Election
+          </Button>
+        )}
       </div>
 
       {/* Statistics Cards */}
@@ -189,10 +193,16 @@ export const ElectionsTable: React.FC = () => {
       <Title level={3} className="py-4">
         All Elections
       </Title>
-      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 min-h-[400px]">
         {isLoading ? (
-          <div className="flex justify-center py-8 col-span-full">
+          <div className="flex justify-center items-center py-8 col-span-full min-h-[400px]">
             <Spin size="large" />
+          </div>
+        ) : !data?.elections || data.elections.length === 0 ? (
+          <div className="flex flex-col justify-center items-center py-16 col-span-full min-h-[400px]">
+            <Text type="secondary" className="text-lg">
+              No elections found
+            </Text>
           </div>
         ) : (
           <>
@@ -243,41 +253,45 @@ export const ElectionsTable: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-gray-100">
+                <div className={`flex flex-col sm:flex-row gap-2 pt-3 border-t border-gray-100 ${isAuthenticated ? 'justify-start' : 'justify-center'}`}>
                   <Button
                     type="primary"
                     icon={<EyeOutlined />}
                     onClick={() => handleView(election)}
-                    className="flex-1 sm:flex-none sm:min-w-[120px]"
+                    className={isAuthenticated ? "flex-1 sm:flex-none sm:min-w-[120px]" : "flex-1 sm:flex-none"}
                     size="middle"
                   >
                     <span className="hidden xs:inline">View Details</span>
                     <span className="xs:hidden">View</span>
                   </Button>
-                  <Button
-                    icon={<EditOutlined />}
-                    onClick={() => handleEdit(election)}
-                    className="flex-1 sm:flex-none sm:min-w-[100px]"
-                    size="middle"
-                  >
-                    Edit
-                  </Button>
-                  <Popconfirm
-                    title="Delete Election"
-                    description="Are you sure you want to delete this election?"
-                    onConfirm={() => handleDelete(election._id)}
-                    okText="Yes"
-                    cancelText="No"
-                  >
-                    <Button
-                      danger
-                      icon={<DeleteOutlined />}
-                      className="flex-1 sm:flex-none sm:min-w-[100px]"
-                      size="middle"
-                    >
-                      Delete
-                    </Button>
-                  </Popconfirm>
+                  {isAuthenticated && (
+                    <>
+                      <Button
+                        icon={<EditOutlined />}
+                        onClick={() => handleEdit(election)}
+                        className="flex-1 sm:flex-none sm:min-w-[100px]"
+                        size="middle"
+                      >
+                        Edit
+                      </Button>
+                      <Popconfirm
+                        title="Delete Election"
+                        description="Are you sure you want to delete this election?"
+                        onConfirm={() => handleDelete(election._id)}
+                        okText="Yes"
+                        cancelText="No"
+                      >
+                        <Button
+                          danger
+                          icon={<DeleteOutlined />}
+                          className="flex-1 sm:flex-none sm:min-w-[100px]"
+                          size="middle"
+                        >
+                          Delete
+                        </Button>
+                      </Popconfirm>
+                    </>
+                  )}
                 </div>
               </Card>
             ))}
