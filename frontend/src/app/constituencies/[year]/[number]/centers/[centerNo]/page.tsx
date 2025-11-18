@@ -385,7 +385,7 @@ export default function CenterDetailsPage() {
               <Text>{center.constituency_name}</Text>
             </Descriptions.Item>
             <Descriptions.Item label="Constituency Number">
-              <Text>{center.constituency_number}</Text>
+              <Text>{center.constituency_id || center.constituency_number}</Text>
             </Descriptions.Item>
             <Descriptions.Item label="Gender Category">
               <Tag color="purple" className="capitalize">

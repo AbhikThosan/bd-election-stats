@@ -13,6 +13,7 @@ import {
   Input,
   Select,
   Space,
+  Popconfirm,
 } from "antd";
 import {
   CalendarOutlined,
@@ -29,8 +30,10 @@ import {
   useGetCentersByConstituencyQuery,
   useGetConstituencyByNumberQuery,
   useBulkUploadCentersMutation,
+  useDeleteCenterMutation,
+  Center,
 } from "@/features/constituencies/slices/constituenciesApiSlice";
-import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import { CenterDrawer } from "@/features/constituencies/components/CenterDrawer";
 import { CenterUploadModal } from "@/features/constituencies/components/CenterUploadModal";
 import { CenterBulkUploadStatusModal } from "@/features/constituencies/components/CenterBulkUploadStatus";
@@ -61,6 +64,7 @@ export default function CentersPage() {
   const [uploadVisible, setUploadVisible] = useState(false);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
   const [uploadId, setUploadId] = useState<string | null>(null);
+  const [editingCenter, setEditingCenter] = useState<Center | null>(null);
 
   const { data, isLoading, error, refetch } = useGetCentersByConstituencyQuery({
     electionYear,
@@ -69,6 +73,7 @@ export default function CentersPage() {
   });
 
   const [bulkUploadCenters] = useBulkUploadCentersMutation();
+  const [deleteCenter] = useDeleteCenterMutation();
 
   const { data: constituencyData } = useGetConstituencyByNumberQuery({
     electionYear,
@@ -115,11 +120,13 @@ export default function CentersPage() {
   };
 
   const handleCreateCenter = () => {
+    setEditingCenter(null);
     setDrawerVisible(true);
   };
 
   const handleCloseDrawer = () => {
     setDrawerVisible(false);
+    setEditingCenter(null);
   };
 
   const handleViewDetails = (centerNumber: number) => {
@@ -128,14 +135,38 @@ export default function CentersPage() {
     );
   };
 
-  const handleEdit = (centerNumber: number) => {
-    // TODO: Implement edit functionality
-    console.log("Edit center:", centerNumber);
+  const handleEdit = (center: Center) => {
+    setEditingCenter(center);
+    setDrawerVisible(true);
   };
 
-  const handleDelete = (centerNumber: number) => {
-    // TODO: Implement delete functionality
-    console.log("Delete center:", centerNumber);
+  const handleDelete = async (id: string, center: Center) => {
+    try {
+      const constituencyId =
+        center.constituency_id ||
+        center.constituency_number ||
+        constituencyNumber;
+      const response = await deleteCenter({
+        id,
+        electionYear,
+        constituencyId,
+      }).unwrap();
+      toast.success(response.message || "Center deleted successfully", {
+        duration: 4000,
+        position: "top-center",
+      });
+    } catch (error: unknown) {
+      const apiError = error as {
+        data?: { message?: string };
+        message?: string;
+      };
+      const errorMessage = apiError?.data?.message || "Failed to delete center";
+
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: "top-center",
+      });
+    }
   };
 
   const handleUploadClick = () => {
@@ -160,10 +191,18 @@ export default function CentersPage() {
       setUploadVisible(false);
     } catch (error) {
       console.error("Upload error:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Upload Failed",
-        text: "Failed to upload file. Please check your authentication.",
+      const apiError = error as {
+        data?: { message?: string };
+        message?: string;
+      };
+      const errorMessage =
+        apiError?.data?.message ||
+        apiError?.message ||
+        "Failed to upload file. Please check your authentication.";
+
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: "top-center",
       });
     }
   };
@@ -494,18 +533,25 @@ export default function CentersPage() {
                   <Button
                     type="default"
                     icon={<EditOutlined />}
-                    onClick={() => handleEdit(center.center_no)}
+                    onClick={() => handleEdit(center)}
                     size="small"
                     title="Edit"
                   />
-                  <Button
-                    type="default"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() => handleDelete(center.center_no)}
-                    size="small"
-                    title="Delete"
-                  />
+                  <Popconfirm
+                    title="Delete Center"
+                    description="Are you sure you want to delete this center?"
+                    onConfirm={() => handleDelete(center._id, center)}
+                    okText="Yes"
+                    cancelText="No"
+                  >
+                    <Button
+                      type="default"
+                      danger
+                      icon={<DeleteOutlined />}
+                      size="small"
+                      title="Delete"
+                    />
+                  </Popconfirm>
                 </div>
               </div>
             </Card>
@@ -543,6 +589,7 @@ export default function CentersPage() {
           electionNumber={constituencyData?.election || 1}
           constituencyNumber={constituencyNumber}
           constituencyName={constituencyData?.constituency_name || ""}
+          center={editingCenter}
         />
 
         {/* Upload Modal */}

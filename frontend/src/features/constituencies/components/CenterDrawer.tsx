@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Drawer,
   Form,
@@ -6,21 +6,29 @@ import {
   InputNumber,
   Select,
   Button,
-  message,
   Row,
   Col,
   Divider,
   Card,
   Typography,
+  Spin,
 } from 'antd';
 import {
   PlusOutlined,
+  EditOutlined,
   SaveOutlined,
   CloseOutlined,
   MinusCircleOutlined,
 } from '@ant-design/icons';
-import Swal from 'sweetalert2';
-import { useCreateCenterMutation, CreateCenterData, ParticipantInfo } from '@/features/constituencies/slices/constituenciesApiSlice';
+import toast from 'react-hot-toast';
+import {
+  useCreateCenterMutation,
+  useUpdateCenterMutation,
+  useGetCenterByNumberQuery,
+  CreateCenterData,
+  ParticipantInfo,
+  Center,
+} from '@/features/constituencies/slices/constituenciesApiSlice';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -32,6 +40,7 @@ interface CenterDrawerProps {
   electionNumber: number;
   constituencyNumber: number;
   constituencyName: string;
+  center?: Center | null;
 }
 
 export const CenterDrawer: React.FC<CenterDrawerProps> = ({
@@ -41,60 +50,130 @@ export const CenterDrawer: React.FC<CenterDrawerProps> = ({
   electionNumber,
   constituencyNumber,
   constituencyName,
+  center,
 }) => {
   const [form] = Form.useForm();
-  const [createCenter, { isLoading }] = useCreateCenterMutation();
+  const [createCenter, { isLoading: isCreating }] = useCreateCenterMutation();
+  const [updateCenter, { isLoading: isUpdating }] = useUpdateCenterMutation();
+
+  const isEditMode = !!center;
+  const isLoading = isCreating || isUpdating;
+
+  // Fetch full center data when editing
+  const { data: fullCenterData, isLoading: isLoadingCenter } =
+    useGetCenterByNumberQuery(
+      {
+        electionYear: electionYear,
+        constituencyNumber: constituencyNumber,
+        centerNumber: center?.center_no || 0,
+      },
+      {
+        skip: !isEditMode || !center || !visible,
+      }
+    );
+
+  // Prefill form when editing with fetched data or when creating
+  useEffect(() => {
+    if (visible && isEditMode && fullCenterData) {
+      form.setFieldsValue({
+        election: fullCenterData.election,
+        election_year: fullCenterData.election_year,
+        constituency_id: fullCenterData.constituency_id || fullCenterData.constituency_number,
+        constituency_name: fullCenterData.constituency_name,
+        center_no: fullCenterData.center_no,
+        center: fullCenterData.center,
+        gender: fullCenterData.gender,
+        co_ordinate: fullCenterData.co_ordinate || { lat: 0, lon: 0 },
+        map_link: fullCenterData.map_link,
+        total_voters: fullCenterData.total_voters,
+        total_valid_votes: fullCenterData.total_valid_votes,
+        total_invalid_votes: fullCenterData.total_invalid_votes,
+        total_votes_cast: fullCenterData.total_votes_cast,
+        turnout_percentage: fullCenterData.turnout_percentage,
+        participant_info:
+          fullCenterData.participant_info && fullCenterData.participant_info.length > 0
+            ? fullCenterData.participant_info
+            : [
+                {
+                  name: '',
+                  symbol: '',
+                  vote: 0,
+                },
+              ],
+      });
+    } else if (visible && !center) {
+      // Prefill form for create mode with props
+      form.setFieldsValue({
+        election: electionNumber,
+        election_year: electionYear,
+        constituency_id: constituencyNumber,
+        constituency_name: constituencyName,
+      });
+    }
+  }, [visible, isEditMode, fullCenterData, form, electionNumber, electionYear, constituencyNumber, constituencyName, center]);
 
   const handleSubmit = async (values: CreateCenterData) => {
     try {
+      // Remove _id fields from participant_info (MongoDB internal IDs)
+      const cleanedParticipantInfo = (values.participant_info || []).map(
+        (participant) => {
+          const { _id, ...rest } = participant as ParticipantInfo & {
+            _id?: string;
+          };
+          return rest;
+        }
+      );
+
       const formData = {
         ...values,
         election: electionNumber,
         election_year: electionYear,
         constituency_id: constituencyNumber,
         constituency_name: constituencyName,
-        participant_info: values.participant_info || [],
+        participant_info: cleanedParticipantInfo,
       };
 
-      await createCenter(formData).unwrap();
-      message.success('Center created successfully!');
-      form.resetFields();
-      onClose();
-      window.location.reload();
-    } catch (error: unknown) {
-      console.error('Create center error:', error);
-      
-      const errorMessage = (error as { data?: { message?: string }; message?: string })?.data?.message || 
-                          (error as { data?: { message?: string }; message?: string })?.message || 
-                          'Failed to create center. Please check your authentication.';
-      
-      if (errorMessage.includes('Invalid token') || errorMessage.includes('No token')) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Authentication Required',
-          text: 'Your session has expired. Please log in again to create centers.',
-          confirmButtonText: 'Go to Login',
-          confirmButtonColor: '#dc2626',
-          showCloseButton: true,
-        }).then(() => {
-          window.location.href = '/login';
+      if (isEditMode && fullCenterData) {
+        const response = await updateCenter({
+          id: fullCenterData._id,
+          data: formData,
+        }).unwrap();
+        toast.success(response.message || 'Center updated successfully!', {
+          duration: 4000,
+          position: 'top-center',
         });
       } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Center Creation Failed',
-          text: errorMessage,
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#dc2626',
-          showCloseButton: true,
-          customClass: {
-            popup: 'swal-popup',
-            title: 'swal-title',
-            htmlContainer: 'swal-content',
-            confirmButton: 'swal-confirm-button'
-          }
+        await createCenter(formData).unwrap();
+        toast.success('Center created successfully!', {
+          duration: 4000,
+          position: 'top-center',
         });
       }
+
+      form.resetFields();
+      onClose();
+      if (!isEditMode) {
+        window.location.reload();
+      }
+    } catch (error: unknown) {
+      console.error(
+        `${isEditMode ? 'Update' : 'Create'} center error:`,
+        error
+      );
+
+      const apiError = error as {
+        data?: { message?: string };
+        message?: string;
+      };
+      const errorMessage =
+        apiError?.data?.message ||
+        apiError?.message ||
+        `Failed to ${isEditMode ? 'update' : 'create'} center. Please check your authentication.`;
+
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: 'top-center',
+      });
     }
   };
 
@@ -104,40 +183,22 @@ export const CenterDrawer: React.FC<CenterDrawerProps> = ({
   };
 
   return (
-    <>
-      <style jsx global>{`
-        .swal-popup {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-          border-radius: 8px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-        .swal-title {
-          font-size: 20px;
-          font-weight: 600;
-          color: #dc2626;
-        }
-        .swal-content {
-          font-size: 16px;
-          color: #374151;
-          line-height: 1.5;
-        }
-        .swal-confirm-button {
-          background-color: #dc2626 !important;
-          border-radius: 6px !important;
-          font-weight: 500 !important;
-          padding: 8px 24px !important;
-        }
-        .swal-confirm-button:hover {
-          background-color: #b91c1c !important;
-        }
-      `}</style>
-      <Drawer
-        title={
-          <div className="flex items-center space-x-2">
-            <PlusOutlined className="text-blue-600" />
-            <span>Create New Center</span>
-          </div>
-        }
+    <Drawer
+      title={
+        <div className="flex items-center space-x-2">
+          {isEditMode ? (
+            <>
+              <EditOutlined className="text-blue-600" />
+              <span>Edit Center</span>
+            </>
+          ) : (
+            <>
+              <PlusOutlined className="text-blue-600" />
+              <span>Create New Center</span>
+            </>
+          )}
+        </div>
+      }
         open={visible}
         onClose={handleCancel}
         width={800}
@@ -152,17 +213,22 @@ export const CenterDrawer: React.FC<CenterDrawerProps> = ({
               loading={isLoading}
               icon={<SaveOutlined />}
             >
-              Create Center
+              {isEditMode ? 'Update Center' : 'Create Center'}
             </Button>
           </div>
         }
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-          requiredMark={false}
-          initialValues={{
+        {isLoadingCenter && isEditMode ? (
+          <div className="flex justify-center items-center py-12">
+            <Spin size="large" />
+          </div>
+        ) : (
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleSubmit}
+            requiredMark={false}
+            initialValues={{
             election: electionNumber,
             election_year: electionYear,
             constituency_id: constituencyNumber,
@@ -552,8 +618,8 @@ export const CenterDrawer: React.FC<CenterDrawerProps> = ({
             <p>Coordinate and participant information can be added or updated after creation.</p>
           </div>
         </Form>
+        )}
       </Drawer>
-    </>
   );
 };
 

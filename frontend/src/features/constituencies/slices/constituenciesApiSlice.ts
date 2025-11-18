@@ -140,7 +140,8 @@ export interface Center {
   _id: string;
   election: number;
   election_year: number;
-  constituency_number: number;
+  constituency_id: number;
+  constituency_number?: number; // Legacy field, use constituency_id instead
   constituency_name: string;
   center_no: number;
   center: string;
@@ -211,6 +212,15 @@ export interface CreateCenterData {
   total_invalid_votes: number;
   total_votes_cast: number;
   turnout_percentage: number;
+}
+
+export interface DeleteCenterResponse {
+  message: string;
+}
+
+export interface UpdateCenterResponse {
+  message: string;
+  center: Center;
 }
 
 export const constituenciesApiSlice = createApi({
@@ -309,6 +319,10 @@ export const constituenciesApiSlice = createApi({
           ...(max_turnout !== undefined && { max_turnout }),
         },
       }),
+      providesTags: (result, error, { electionYear, constituencyNumber }) => [
+        { type: "Center", id: `LIST-${electionYear}-${constituencyNumber}` },
+        "Center",
+      ],
     }),
     createCenter: builder.mutation<Center, CreateCenterData>({
       query: (body) => ({
@@ -316,13 +330,48 @@ export const constituenciesApiSlice = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Constituency"],
+      invalidatesTags: (result, error, body) => [
+        { type: "Center", id: `LIST-${body.election_year}-${body.constituency_id}` },
+        "Center",
+        "Constituency",
+      ],
+    }),
+    updateCenter: builder.mutation<
+      UpdateCenterResponse,
+      { id: string; data: CreateCenterData }
+    >({
+      query: ({ id, data }) => ({
+        url: `/centers/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: (result, error, { id, data }) => [
+        { type: "Center", id },
+        { type: "Center", id: `LIST-${data.election_year}-${data.constituency_id}` },
+        "Center",
+        "Constituency",
+      ],
+    }),
+    deleteCenter: builder.mutation<DeleteCenterResponse, { id: string; electionYear: number; constituencyId: number }>({
+      query: ({ id }) => ({
+        url: `/centers/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { electionYear, constituencyId }) => [
+        { type: "Center", id: `LIST-${electionYear}-${constituencyId}` },
+        "Center",
+        "Constituency",
+      ],
     }),
     getCenterByNumber: builder.query<Center, { electionYear: number; constituencyNumber: number; centerNumber: number }>({
       query: ({ electionYear, constituencyNumber, centerNumber }) => ({
         url: `/public/centers/${electionYear}/${constituencyNumber}/${centerNumber}`,
         method: "GET",
       }),
+      providesTags: (result, error, { electionYear, constituencyNumber }) => [
+        { type: "Center", id: `LIST-${electionYear}-${constituencyNumber}` },
+        "Center",
+      ],
     }),
     bulkUploadCenters: builder.mutation<{ upload_id: string; status: string; message: string }, FormData>({
       query: (formData) => ({
@@ -357,6 +406,8 @@ export const {
   useGetConstituencyByNumberQuery,
   useGetCentersByConstituencyQuery,
   useCreateCenterMutation,
+  useUpdateCenterMutation,
+  useDeleteCenterMutation,
   useGetCenterByNumberQuery,
   useBulkUploadCentersMutation,
   useGetCenterBulkUploadStatusQuery,
