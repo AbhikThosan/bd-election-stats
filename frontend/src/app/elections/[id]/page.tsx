@@ -34,6 +34,7 @@ import { AiOutlineNumber } from "react-icons/ai";
 import { MdOutlineCancelPresentation, MdOutlineChair } from "react-icons/md";
 import { LiaVoteYeaSolid } from "react-icons/lia";
 import { GiTabletopPlayers, GiVote } from "react-icons/gi";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 const { Title, Text } = Typography;
 
@@ -41,6 +42,7 @@ export default function ElectionDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const electionId = params.id as string;
+  const { isAuthenticated } = useAuth();
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [editingElection, setEditingElection] = useState<Election | null>(null);
@@ -89,7 +91,7 @@ export default function ElectionDetailsPage() {
   if (error || !election) {
     return (
       <DashboardLayout>
-        <div className="text-center py-12">
+        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)] text-center py-12">
           <Text type="danger" className="text-lg">
             Election not found or failed to load
           </Text>
@@ -108,7 +110,7 @@ export default function ElectionDetailsPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 min-h-[calc(100vh-200px)]">
         {/* Breadcrumb */}
         <Breadcrumb
           items={[
@@ -145,10 +147,16 @@ export default function ElectionDetailsPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
-              <span className="hidden sm:inline">Edit Election</span>
-              <span className="sm:hidden">Edit</span>
-            </Button>
+            {isAuthenticated && (
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={handleEdit}
+              >
+                <span className="hidden sm:inline">Edit Election</span>
+                <span className="sm:hidden">Edit</span>
+              </Button>
+            )}
             <Button
               onClick={() =>
                 router.push(`/constituencies/${election.election_year}`)

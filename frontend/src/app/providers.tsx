@@ -8,6 +8,8 @@ import { store, persistor } from "@/store/store";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { restoreFromStorage } from "@/features/auth/slices/authCredentialSlice";
+import { SocketProvider } from "@/contexts/SocketContext";
+import { UserSocketListener } from "@/components/socket/UserSocketListener";
 
 function AuthRestorer() {
   const dispatch = useDispatch();
@@ -27,9 +29,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
         loading={null}
         persistor={persistor}
       >
-        <AuthRestorer />
-        {children}
-        <Toaster
+        <SocketProvider>
+          <AuthRestorer />
+          <UserSocketListener />
+          {children}
+          <Toaster
           position="top-center"
           reverseOrder={false}
           gutter={8}
@@ -57,6 +61,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             },
           }}
         />
+        </SocketProvider>
       </PersistGate>
     </Provider>
   );

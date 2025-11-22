@@ -471,7 +471,7 @@ export default function CentersPage() {
         </Card>
 
         {/* Centers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-h-[400px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-h-[330px]">
           {data.centers.length === 0 ? (
             <div className="flex flex-col justify-center items-center py-16 col-span-full min-h-[400px]">
               <Text type="secondary" className="text-lg">

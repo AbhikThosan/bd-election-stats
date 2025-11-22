@@ -4,6 +4,8 @@ import storage from "redux-persist/lib/storage";
 import { authApiSlice } from "@/features/auth/slices/authApiSlice";
 import { electionsApiSlice } from "@/features/elections/slices/electionsApiSlice";
 import { constituenciesApiSlice } from "@/features/constituencies/slices/constituenciesApiSlice";
+import { notificationsApiSlice } from "@/features/notifications/slices/notificationsApiSlice";
+import { usersApiSlice } from "@/features/users/slices/usersApiSlice";
 import authReducer from "@/features/auth/slices/authCredentialSlice";
 
 const persistConfig = {
@@ -20,6 +22,8 @@ export const store = configureStore({
     [authApiSlice.reducerPath]: authApiSlice.reducer,
     [electionsApiSlice.reducerPath]: electionsApiSlice.reducer,
     [constituenciesApiSlice.reducerPath]: constituenciesApiSlice.reducer,
+    [notificationsApiSlice.reducerPath]: notificationsApiSlice.reducer,
+    [usersApiSlice.reducerPath]: usersApiSlice.reducer,
     auth: persistedReducer,
   },
   middleware: (getDefaultMiddleware) =>
@@ -27,7 +31,13 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(authApiSlice.middleware, electionsApiSlice.middleware, constituenciesApiSlice.middleware),
+    }).concat(
+      authApiSlice.middleware,
+      electionsApiSlice.middleware,
+      constituenciesApiSlice.middleware,
+      notificationsApiSlice.middleware,
+      usersApiSlice.middleware
+    ),
 });
 
 export const persistor = persistStore(store);

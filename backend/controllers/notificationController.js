@@ -7,13 +7,16 @@ const { getIO } = require("../socket");
 exports.listNotifications = async (req, res, next) => {
   try {
     const { page = 1, limit = 10 } = req.query;
-    const notifications = await Notification.find({ recipientId: req.user.id })
+    const query = { 
+      recipientId: req.user.id,
+      status: "pending" // Only show pending notifications
+    };
+    const notifications = await Notification.find(query)
+      .sort({ createdAt: -1 }) // Most recent first
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
-    const total = await Notification.countDocuments({
-      recipientId: req.user.id,
-    });
+    const total = await Notification.countDocuments(query);
 
     res.json({
       notifications,
