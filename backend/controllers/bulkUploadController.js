@@ -118,9 +118,9 @@ exports.uploadBulkData = async (req, res, next) => {
       estimated_time: "2-5 minutes",
     });
   } catch (error) {
-    // Clean up uploaded file on error
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+    // Clean up uploaded file on error (before processing starts)
+    if (req.file && req.file.path) {
+      cleanupFile(req.file.path);
     }
     next(error);
   }
@@ -439,7 +439,7 @@ async function processBulkUpload(bulkUpload, filePath) {
       await bulkUpload.save();
     }
 
-    // Update final status
+    // Update final status - ensure all data is saved to database
     bulkUpload.status = "completed";
     bulkUpload.validation_errors = errors;
     bulkUpload.processing_time = Math.round((Date.now() - startTime) / 1000);
@@ -449,6 +449,9 @@ async function processBulkUpload(bulkUpload, filePath) {
     logger.info(
       `Bulk upload completed: ${bulkUpload.upload_id}, ${successful} successful, ${updated} updated, ${duplicates} duplicates, ${errors.length} errors`
     );
+
+    // Clean up file after all data is saved to database
+    cleanupFile(filePath);
   } catch (error) {
     bulkUpload.status = "failed";
     bulkUpload.validation_errors = [
@@ -459,11 +462,9 @@ async function processBulkUpload(bulkUpload, filePath) {
     ];
     await bulkUpload.save();
     logger.error("Bulk upload failed:", error);
-  } finally {
-    // Clean up file
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+    
+    // Clean up file even on failure (after saving status to database)
+    cleanupFile(filePath);
   }
 }
 
@@ -765,4 +766,16 @@ function transformCenterRowData(row) {
     total_votes_cast: parseInt(row.total_votes_cast),
     turnout_percentage: parseFloat(row.turnout_percentage),
   };
+}
+
+// Helper function to safely clean up uploaded files
+function cleanupFile(filePath) {
+  try {
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      logger.info(`Successfully cleaned up file: ${filePath}`);
+    }
+  } catch (error) {
+    logger.error(`Failed to cleanup file ${filePath}:`, error);
+  }
 }

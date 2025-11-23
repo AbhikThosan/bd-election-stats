@@ -26,6 +26,7 @@ import {
   CloseOutlined,
   SearchOutlined,
   ReloadOutlined,
+  KeyOutlined,
 } from "@ant-design/icons";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -35,9 +36,9 @@ import {
   useApproveUserMutation,
   useUpdateUserRoleMutation,
   useDeleteUserMutation,
+  useResetPasswordMutation,
 } from "@/features/users/slices/usersApiSlice";
 import { UserDetail } from "@/types/users";
-import { formatDistanceToNow } from "date-fns";
 import { useSocket } from "@/contexts/SocketContext";
 
 const { Title, Text } = Typography;
@@ -53,8 +54,10 @@ export default function UsersPage() {
     status?: "pending" | "active";
   }>({});
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [resetPasswordModalVisible, setResetPasswordModalVisible] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [form] = Form.useForm();
+  const [resetPasswordForm] = Form.useForm();
 
   const {
     data,
@@ -91,6 +94,7 @@ export default function UsersPage() {
   const [updateUserRole, { isLoading: isUpdatingRole }] =
     useUpdateUserRoleMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
+  const [resetPassword, { isLoading: isResettingPassword }] = useResetPasswordMutation();
 
   const handleApprove = async (user: UserDetail) => {
     try {
@@ -153,6 +157,30 @@ export default function UsersPage() {
     }
   };
 
+  const handleResetPassword = (user: UserDetail) => {
+    setSelectedUserId(user._id);
+    resetPasswordForm.resetFields();
+    setResetPasswordModalVisible(true);
+  };
+
+  const handleResetPasswordSubmit = async () => {
+    try {
+      const values = await resetPasswordForm.validateFields();
+      if (!selectedUserId) return;
+
+      await resetPassword({
+        userId: selectedUserId,
+        newPassword: values.newPassword,
+      }).unwrap();
+      message.success("Password reset successfully");
+      setResetPasswordModalVisible(false);
+      setSelectedUserId(null);
+      resetPasswordForm.resetFields();
+    } catch (error: any) {
+      message.error(error?.data?.message || "Failed to reset password");
+    }
+  };
+
   const handleFilterChange = (key: string, value: any) => {
     setFilters((prev) => ({ ...prev, [key]: value || undefined }));
     setPage(1);
@@ -169,9 +197,7 @@ export default function UsersPage() {
       key: "user",
       render: (record: UserDetail) => (
         <Space direction="vertical" size={0}>
-          <Text strong>
-            <UserOutlined /> {record.username}
-          </Text>
+          <Text strong>{record.username}</Text>
           <Text type="secondary" style={{ fontSize: "12px" }}>
             {record.email}
           </Text>
@@ -195,26 +221,6 @@ export default function UsersPage() {
       },
     },
     {
-      title: "Status",
-      key: "status",
-      render: (record: UserDetail) => (
-        <Tag color={record.status === "active" ? "green" : "orange"}>
-          {record.status.toUpperCase()}
-        </Tag>
-      ),
-    },
-    {
-      title: "Created",
-      key: "createdAt",
-      render: (record: UserDetail) => (
-        <Text type="secondary" style={{ fontSize: "12px" }}>
-          {formatDistanceToNow(new Date(record.createdAt), {
-            addSuffix: true,
-          })}
-        </Text>
-      ),
-    },
-    {
       title: "Actions",
       key: "actions",
       render: (record: UserDetail) => (
@@ -234,8 +240,9 @@ export default function UsersPage() {
                   icon={<CheckOutlined />}
                   size="small"
                   disabled={isApproving}
+                  className="md:inline-flex"
                 >
-                  Approve
+                  <span className="hidden md:inline">Approve</span>
                 </Button>
               </Popconfirm>
               <Popconfirm
@@ -251,8 +258,9 @@ export default function UsersPage() {
                   icon={<CloseOutlined />}
                   size="small"
                   disabled={isApproving}
+                  className="md:inline-flex"
                 >
-                  Reject
+                  <span className="hidden md:inline">Reject</span>
                 </Button>
               </Popconfirm>
             </>
@@ -264,8 +272,18 @@ export default function UsersPage() {
                 icon={<EditOutlined />}
                 size="small"
                 onClick={() => handleEdit(record)}
+                className="md:inline-flex"
               >
-                Edit Role
+                <span className="hidden md:inline">Edit Role</span>
+              </Button>
+              <Button
+                type="default"
+                icon={<KeyOutlined />}
+                size="small"
+                onClick={() => handleResetPassword(record)}
+                className="md:inline-flex"
+              >
+                <span className="hidden md:inline">Reset Password</span>
               </Button>
               <Popconfirm
                 title="Delete this user?"
@@ -280,8 +298,9 @@ export default function UsersPage() {
                   icon={<DeleteOutlined />}
                   size="small"
                   disabled={isDeleting}
+                  className="md:inline-flex"
                 >
-                  Delete
+                  <span className="hidden md:inline">Delete</span>
                 </Button>
               </Popconfirm>
             </>
@@ -422,6 +441,59 @@ export default function UsersPage() {
                   </Text>
                 </div>
               )}
+            </Form>
+          </Modal>
+
+          <Modal
+            title="Reset Password"
+            open={resetPasswordModalVisible}
+            onOk={handleResetPasswordSubmit}
+            onCancel={() => {
+              setResetPasswordModalVisible(false);
+              setSelectedUserId(null);
+              resetPasswordForm.resetFields();
+            }}
+            confirmLoading={isResettingPassword}
+            okText="Reset Password"
+          >
+            <Form form={resetPasswordForm} layout="vertical">
+              {userDetail && (
+                <div className="mb-4 p-3 bg-gray-50 rounded">
+                  <Text type="secondary">
+                    <strong>User:</strong> {userDetail.username} ({userDetail.email})
+                  </Text>
+                </div>
+              )}
+              <Form.Item
+                name="newPassword"
+                label="New Password"
+                rules={[
+                  { required: true, message: "Please enter a new password" },
+                  { min: 8, message: "Password must be at least 8 characters" },
+                ]}
+              >
+                <Input.Password placeholder="Enter new password" />
+              </Form.Item>
+              <Form.Item
+                name="confirmPassword"
+                label="Confirm Password"
+                dependencies={["newPassword"]}
+                rules={[
+                  { required: true, message: "Please confirm the password" },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      if (!value || getFieldValue("newPassword") === value) {
+                        return Promise.resolve();
+                      }
+                      return Promise.reject(
+                        new Error("The two passwords do not match!")
+                      );
+                    },
+                  }),
+                ]}
+              >
+                <Input.Password placeholder="Confirm new password" />
+              </Form.Item>
             </Form>
           </Modal>
         </div>

@@ -27,10 +27,18 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const pathname = usePathname();
   const { isAuthenticated, user } = useAuth();
 
+  // Check if user has admin/editor/super_admin role
+  const hasAdminAccess =
+    isAuthenticated &&
+    user &&
+    (user.role === "super_admin" ||
+      user.role === "admin" ||
+      user.role === "editor");
+
   // Get notification count for badge
   const { data: notificationsData } = useGetNotificationsQuery(
     { page: 1, limit: 1 },
-    { skip: !isAuthenticated }
+    { skip: !isAuthenticated || !hasAdminAccess }
   );
   const notificationCount = notificationsData?.total || 0;
 
@@ -46,14 +54,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const handleRegister = () => {
     router.push("/register");
   };
-
-  // Check if user has admin/editor/super_admin role
-  const hasAdminAccess =
-    isAuthenticated &&
-    user &&
-    (user.role === "super_admin" ||
-      user.role === "admin" ||
-      user.role === "editor");
 
   const isNotificationsActive = pathname === "/notifications";
   const isUsersActive = pathname === "/users";
@@ -71,7 +71,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <span className="text-xl font-extrabold bg-linear-to-r from-red-600 to-green-500 bg-clip-text text-transparent">
                 BD
               </span>
-              <span className="text-xl font-extrabold text-white">
+              <span className="text-xl font-extrabold text-white!">
                 Election
               </span>
               <span className="text-xl font-extrabold bg-linear-to-r from-red-600 to-green-500 bg-clip-text text-transparent">
@@ -83,23 +83,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
         <div className="flex items-center gap-2">
           {hasAdminAccess && (
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
               <Button
                 type="text"
-                icon={
-                  <Badge
-                    count={notificationCount}
-                    size="small"
-                    offset={[-2, 2]}
-                  >
-                    <BellOutlined className="text-lg text-white! drop-shadow-lg" />
-                  </Badge>
-                }
                 onClick={() => router.push("/notifications")}
-                className={`flex items-center justify-center transition-all ${
+                className={`flex items-center justify-center transition-all rounded-full ${
                   isNotificationsActive
-                    ? "text-white bg-white/25 hover:bg-white/35 shadow-md"
-                    : "text-white hover:text-white hover:bg-white/15"
+                    ? "text-white! bg-white/25! hover:bg-white/35! shadow-md"
+                    : "text-white! hover:text-white! hover:bg-white/15!"
                 }`}
                 size="large"
                 style={{
@@ -107,17 +98,27 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   height: "48px",
                   filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))",
                 }}
-              />
+              >
+                <Badge
+                  count={notificationCount}
+                  overflowCount={9}
+                  size="small"
+                  offset={[-4, 4]}
+                  showZero={false}
+                >
+                  <BellOutlined className="text-lg text-white! drop-shadow-lg" />
+                </Badge>
+              </Button>
               <Button
                 type="text"
                 icon={
                   <UserOutlined className="text-lg text-white! drop-shadow-lg" />
                 }
                 onClick={() => router.push("/users")}
-                className={`flex items-center justify-center transition-all ${
+                className={`flex items-center justify-center transition-all rounded-full ${
                   isUsersActive
-                    ? "text-white bg-white/25 hover:bg-white/35 shadow-md"
-                    : "text-white hover:text-white hover:bg-white/15"
+                    ? "text-white! bg-white/25! hover:bg-white/35! shadow-md"
+                    : "text-white! hover:text-white! hover:bg-white/15!"
                 }`}
                 size="large"
                 style={{
@@ -131,7 +132,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           {isAuthenticated ? (
             <Button
               type="text"
-              icon={<LogoutOutlined className=" drop-shadow-md" />}
+              icon={<LogoutOutlined className="text-white! drop-shadow-md" />}
               onClick={handleLogout}
               className="text-white! hover:text-red-500! bg-white/15! transition-all"
               size="large"

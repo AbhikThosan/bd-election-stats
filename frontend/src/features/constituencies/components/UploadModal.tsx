@@ -1,6 +1,6 @@
 import React from 'react';
-import { Modal, Upload } from 'antd';
-import { UploadOutlined } from '@ant-design/icons';
+import { Modal, Upload, Button, Space } from 'antd';
+import { UploadOutlined, DownloadOutlined } from '@ant-design/icons';
 
 interface UploadModalProps {
   visible: boolean;
@@ -13,6 +13,15 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   onClose,
   onUpload,
 }) => {
+  const handleDownloadSample = () => {
+    const link = document.createElement('a');
+    link.href = '/sample-constituency-results.csv';
+    link.download = 'sample-constituency-results.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <>
       <style jsx global>{`
@@ -46,6 +55,17 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         footer={null}
         width={600}
       >
+        <div className="mb-4">
+          <Space>
+            <Button
+              type="default"
+              icon={<DownloadOutlined />}
+              onClick={handleDownloadSample}
+            >
+              Download Sample CSV
+            </Button>
+          </Space>
+        </div>
         <Upload.Dragger
           name="file"
           accept=".csv,.xlsx,.xls"

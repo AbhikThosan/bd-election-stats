@@ -9,6 +9,8 @@ import {
   UpdateUserRoleRequest,
   UpdateUserRoleResponse,
   DeleteUserResponse,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
 } from "@/types/users";
 
 export const usersApiSlice = createApi({
@@ -75,6 +77,17 @@ export const usersApiSlice = createApi({
       }),
       invalidatesTags: ["User", "Notification"],
     }),
+    resetPassword: builder.mutation<
+      ResetPasswordResponse,
+      ResetPasswordRequest
+    >({
+      query: (data) => ({
+        url: "/auth/admin/reset-password",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -84,5 +97,6 @@ export const {
   useApproveUserMutation,
   useUpdateUserRoleMutation,
   useDeleteUserMutation,
+  useResetPasswordMutation,
 } = usersApiSlice;
 

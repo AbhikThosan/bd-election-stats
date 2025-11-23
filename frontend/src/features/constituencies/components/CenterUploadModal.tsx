@@ -1,6 +1,6 @@
 import React from 'react';
-import { Modal, Upload, message, Typography } from 'antd';
-import { InboxOutlined } from '@ant-design/icons';
+import { Modal, Upload, message, Typography, Button, Space } from 'antd';
+import { InboxOutlined, DownloadOutlined } from '@ant-design/icons';
 import Swal from 'sweetalert2';
 
 const { Text } = Typography;
@@ -30,6 +30,15 @@ export const CenterUploadModal: React.FC<CenterUploadModalProps> = ({
       return false; // Prevent auto upload
     },
     accept: '.xlsx,.xls,.csv',
+  };
+
+  const handleDownloadSample = () => {
+    const link = document.createElement('a');
+    link.href = '/sample-centers.csv';
+    link.download = 'sample-centers.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -68,6 +77,17 @@ export const CenterUploadModal: React.FC<CenterUploadModalProps> = ({
         width={600}
       >
         <div className="py-6">
+          <div className="mb-4">
+            <Space>
+              <Button
+                type="default"
+                icon={<DownloadOutlined />}
+                onClick={handleDownloadSample}
+              >
+                Download Sample CSV
+              </Button>
+            </Space>
+          </div>
           <Text className="block mb-4 text-gray-600">
             Upload an Excel or CSV file containing center data. The file should include all required fields.
           </Text>

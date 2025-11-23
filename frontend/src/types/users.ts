@@ -34,6 +34,15 @@ export interface DeleteUserResponse {
   message: string;
 }
 
+export interface ResetPasswordRequest {
+  userId: string;
+  newPassword: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
 export interface UserQueryParams {
   page?: number;
   limit?: number;
